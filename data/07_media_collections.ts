@@ -17,28 +17,14 @@ create table if not exists public.collection_media_join (
   primary key (collection_id, media_id)
 );
 
--- Add collection_id to products table for gallery link
-alter table public.products add column if not exists collection_id bigint references public.media_collections(id) on delete set null;
-
 -- Enable RLS
 alter table public.media_collections enable row level security;
 alter table public.collection_media_join enable row level security;
 
 -- Policies (Permissive for Admin UI)
+drop policy if exists "Public can manage collections" on public.media_collections;
 create policy "Public can manage collections" on public.media_collections for all using (true) with check (true);
-create policy "Public can manage collection joins" on public.collection_media_join for all using (true) with check (true);
 
--- Create a View for easier querying of products with their galleries
--- This view joins products with their assigned collection and aggregates all associated image URLs into an array.
-create or replace view public.products_with_gallery as
-select
-  p.*,
-  (
-    select array_agg(ma.public_url order by ma.created_at)
-    from public.collection_media_join cmj
-    join public.media_assets ma on cmj.media_id = ma.id
-    where cmj.collection_id = p.collection_id
-  ) as gallery_images
-from
-  public.products p;
+drop policy if exists "Public can manage collection joins" on public.collection_media_join;
+create policy "Public can manage collection joins" on public.collection_media_join for all using (true) with check (true);
 `;

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, ModalType } from '../../types';
 import { useModal } from '../../contexts/ModalContext';
+import { getCollectionDetails } from '../../services/mediaService';
 
 interface ProductFormProps {
   initialData?: Product | null;
@@ -39,6 +40,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     collection_id: undefined as number | undefined
   });
 
+  const [galleryImageCount, setGalleryImageCount] = useState(0);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const magicInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -54,8 +56,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
         stock: initialData.stock !== undefined ? initialData.stock.toString() : '10',
         collection_id: initialData.collection_id
       });
+      if (initialData.collection_id) {
+          setGalleryImageCount(initialData.gallery_images?.length || 0);
+      } else {
+          setGalleryImageCount(0);
+      }
     } else {
       setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20', collection_id: undefined });
+      setGalleryImageCount(0);
     }
   }, [initialData, categories]);
 
@@ -77,12 +85,17 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   const openMediaLibrary = () => {
       openModal(ModalType.MEDIA_SELECTOR, {
-          onSelect: (media: { imageUrl: string; collectionId: number | null }) => {
+          currentSelection: {
+              imageUrl: formData.image_url,
+              collectionId: formData.collection_id,
+          },
+          onSelect: (media: { imageUrl: string; collectionId: number | null, imageCount: number }) => {
               setFormData(prev => ({
                   ...prev,
                   image_url: media.imageUrl,
                   collection_id: media.collectionId === null ? undefined : media.collectionId,
               }));
+              setGalleryImageCount(media.imageCount || 0);
           }
       });
   };
@@ -122,6 +135,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     if (success && !isEditing) {
       setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20', collection_id: undefined });
       setIsCustomCategory(false);
+      setGalleryImageCount(0);
     }
   };
 
@@ -229,22 +243,35 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <textarea name="description" rows={3} value={formData.description} onChange={handleInputChange} className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:outline-none resize-none dark:bg-slate-900 dark:text-white" placeholder="Product details..." />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product Media</label>
+          <div className="bg-slate-50 dark:bg-slate-700/40 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Product Media</label>
             <div className="flex gap-4 items-center">
-               <div className="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center">
+               <div className="w-28 h-28 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center relative group">
                  {formData.image_url ? (
-                   <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                   <>
+                    <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                    {formData.collection_id && galleryImageCount > 0 && (
+                        <div className="absolute bottom-1 right-1 bg-slate-900/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <i className="fas fa-images"></i> +{galleryImageCount}
+                        </div>
+                    )}
+                   </>
                  ) : (
-                   <i className="fas fa-image text-2xl text-slate-300"></i>
+                   <i className="fas fa-image text-3xl text-slate-400"></i>
                  )}
+                 <div 
+                    onClick={openMediaLibrary} 
+                    className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                 >
+                    <i className="fas fa-pen"></i>
+                 </div>
                </div>
-               <div className="flex flex-col">
-                  <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 dark:text-slate-300 font-bold">
-                    {formData.collection_id ? 'Change Media' : 'Set Media'}
+               <div className="flex flex-col gap-2">
+                  <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-white dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-600 shadow-sm">
+                    {formData.image_url ? 'Change Media' : 'Set Media'}
                   </button>
-                  <p className="text-xs text-slate-400 mt-2">
-                    {formData.collection_id ? `Collection #${formData.collection_id} assigned` : 'Set cover image & gallery.'}
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px]">
+                    {formData.collection_id ? `Gallery assigned (+${galleryImageCount} images)` : 'Set a cover image or assign a gallery.'}
                   </p>
                </div>
             </div>
