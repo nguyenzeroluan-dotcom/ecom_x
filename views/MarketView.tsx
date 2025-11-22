@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../components/ProductCard';
-import { Product, ModalType, MarketViewMode, SortOption } from '../types';
+import { Product, ModalType, MarketViewMode, SortOption, ViewState } from '../types';
 import { getProducts } from '../services/supabaseClient';
 import { usePreferences } from '../contexts/PreferencesContext';
 import { useModal } from '../contexts/ModalContext';
@@ -8,9 +9,12 @@ import { compareProductsAI } from '../services/geminiService';
 import HeroCarousel from '../components/HeroCarousel';
 import ProductFilters from '../components/ProductFilters';
 
+interface MarketViewProps {
+  setView: (view: ViewState) => void;
+}
+
 const ProductSkeleton = () => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden h-full flex flex-col shadow-sm relative">
-        {/* Shimmer Overlay */}
         <div className="absolute inset-0 z-10 bg-gradient-to-r from-transparent via-white/40 dark:via-slate-700/40 to-transparent animate-shimmer" style={{ transform: 'skewX(-20deg)' }}></div>
         
         <div className="aspect-[4/5] bg-slate-100 dark:bg-slate-700/50 relative"></div>
@@ -28,7 +32,7 @@ const ProductSkeleton = () => (
     </div>
 );
 
-const MarketView: React.FC = () => {
+const MarketView: React.FC<MarketViewProps> = ({ setView }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -47,7 +51,6 @@ const MarketView: React.FC = () => {
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
-      // Artificial delay to show off the premium skeleton loader
       await new Promise(resolve => setTimeout(resolve, 800));
       const data = await getProducts();
       setProducts(data);
@@ -122,11 +125,26 @@ const MarketView: React.FC = () => {
   }, [products, search, selectedCategory, priceRange, sortOption]);
 
   return (
-    <div className="min-h-screen bg-surface dark:bg-slate-950 pb-24 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 pb-24 transition-colors duration-300">
       
       <HeroCarousel />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+
+        {/* AI Discovery Section */}
+        <div className="text-center mb-12 animate-fade-in-up">
+           <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 font-display">Discover with AI</h2>
+           <p className="text-slate-500 max-w-2xl mx-auto mb-6">Use natural language to find exactly what you need. Try searching for a vibe, a use case, or a style.</p>
+           <div className="max-w-xl mx-auto relative group">
+              <input 
+                type="text"
+                placeholder="e.g., 'A gift for a minimalist coffee lover'"
+                onFocus={() => setView(ViewState.CHAT)}
+                className="w-full pl-12 pr-6 py-4 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/30 dark:shadow-black/20 focus:ring-4 focus:ring-primary/20 focus:border-primary outline-none transition-all text-lg" 
+              />
+              <i className="fas fa-sparkles text-primary absolute left-5 top-1/2 -translate-y-1/2 text-lg"></i>
+           </div>
+        </div>
         
         {/* Breadcrumbs & Stats */}
         <div className="flex justify-between items-center mb-6 text-sm text-slate-500 dark:text-slate-400">
@@ -156,35 +174,20 @@ const MarketView: React.FC = () => {
 
             {/* Main Content */}
             <div className="lg:col-span-3">
-                 {/* Mobile Filter & Search Bar */}
-                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-soft border border-slate-100 dark:border-slate-700 p-4 mb-6 sticky top-20 z-30 flex flex-col sm:flex-row gap-4 backdrop-blur-xl bg-white/90 dark:bg-slate-800/90">
-                    <div className="relative flex-1 group">
-                        <input
-                        type="text"
-                        placeholder="Ask AI to find products (e.g. 'Cozy aesthetic')..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border-transparent focus:bg-white dark:focus:bg-black focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-slate-700 dark:text-white placeholder-slate-400 shadow-inner"
-                        />
-                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
-                            <i className="fas fa-sparkles"></i>
-                        </div>
+                 {/* Mobile Filter */}
+                 <div className="lg:hidden bg-white dark:bg-slate-800 rounded-2xl shadow-soft border border-slate-100 dark:border-slate-700 p-4 mb-6 sticky top-20 z-30 flex flex-col sm:flex-row gap-4 backdrop-blur-xl bg-white/90 dark:bg-slate-800/90">
+                    <div className="flex-1">
+                        <select 
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="w-full h-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border-transparent text-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                        >
+                            {dynamicCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
                     </div>
-
-                    <div className="flex gap-2">
-                        <div className="lg:hidden">
-                            <select 
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                                className="h-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border-transparent text-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                            >
-                                {dynamicCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
-                            <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-600 text-primary shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}><i className="fas fa-th-large"></i></button>
-                            <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-600 text-primary shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}><i className="fas fa-list"></i></button>
-                        </div>
+                    <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
+                        <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-600 text-primary shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}><i className="fas fa-th-large"></i></button>
+                        <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-600 text-primary shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}><i className="fas fa-list"></i></button>
                     </div>
                  </div>
 
@@ -239,7 +242,7 @@ const MarketView: React.FC = () => {
 
       {/* Compare Bar */}
       {compareList.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 flex items-center gap-6 animate-slide-in-up max-w-2xl w-[90%]">
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 flex items-center gap-6 animate-slide-up-toast max-w-2xl w-[90%]">
             <div className="flex -space-x-3">
                 {compareList.map(p => (
                     <img key={p.id} src={p.image_url} className="w-12 h-12 rounded-full border-2 border-white dark:border-slate-800 object-cover bg-slate-100" alt={p.name} />

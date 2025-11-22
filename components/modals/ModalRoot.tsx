@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useModal } from '../../contexts/ModalContext';
 import { ModalType } from '../../types';
@@ -7,6 +8,7 @@ import ConfirmModal from './ConfirmModal';
 import SuccessModal from './SuccessModal';
 import ComparisonModal from './ComparisonModal';
 import AuthModal from './AuthModal';
+import MediaSelectorModal from '../manager/media/MediaSelectorModal';
 
 const ModalRoot: React.FC = () => {
   const { isOpen, modalType } = useModal();
@@ -24,6 +26,8 @@ const ModalRoot: React.FC = () => {
       return <ComparisonModal />;
     case ModalType.AUTH:
       return <AuthModal />;
+    case ModalType.MEDIA_SELECTOR:
+      return <MediaSelectorModal />;
     default:
       return null;
   }

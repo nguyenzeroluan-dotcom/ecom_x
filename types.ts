@@ -1,4 +1,5 @@
 
+
 export interface Product {
   id: number | string;
   name: string;
@@ -72,7 +73,8 @@ export enum ModalType {
   CONFIRM = 'CONFIRM',
   SUCCESS = 'SUCCESS',
   COMPARISON = 'COMPARISON',
-  AUTH = 'AUTH'
+  AUTH = 'AUTH',
+  MEDIA_SELECTOR = 'MEDIA_SELECTOR'
 }
 
 export interface ModalContextType {
@@ -142,7 +144,7 @@ export interface PreferencesContextType {
 export type ManagerViewMode = 'table' | 'grid' | 'list';
 export type MarketViewMode = 'grid' | 'list';
 
-export type ManagerTab = 'PRODUCTS' | 'CATEGORIES' | 'INVENTORY' | 'FORECAST' | 'USERS' | 'ROLES' | 'DATABASE';
+export type ManagerTab = 'DASHBOARD' | 'PRODUCTS' | 'CATEGORIES' | 'INVENTORY' | 'MEDIA' | 'FORECAST' | 'USERS' | 'ROLES' | 'DATABASE';
 
 export interface CategoryData {
   id?: number;
@@ -222,4 +224,22 @@ export interface InventoryLog {
   note?: string;
   user_id?: string;
   created_at: string;
+}
+
+// --- Media Manager Types ---
+
+export interface MediaAsset {
+    id: number;
+    file_name: string;
+    file_path: string; // Path within Supabase storage
+    public_url: string;
+    mime_type: string;
+    size: number; // in bytes
+    alt_text?: string;
+    user_id?: string;
+    created_at: string;
+    width?: number;
+    height?: number;
+    tags?: string[];
+    updated_at?: string;
 }

@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, UserRole } from '../../types';
-import { uploadProductImage } from '../../services/supabaseClient';
+// FIX: Replaced non-existent 'uploadProductImage' with 'uploadMediaAsset'
+import { uploadMediaAsset } from '../../services/supabaseClient';
 
 interface UserFormProps {
   initialData?: UserProfile | null;
@@ -53,8 +54,9 @@ const UserForm: React.FC<UserFormProps> = ({
     if (e.target.files?.[0]) {
         setUploading(true);
         try {
-            const url = await uploadProductImage(e.target.files[0], 'avatars');
-            setFormData(prev => ({ ...prev, avatar_url: url }));
+            // FIX: Use the 'public_url' property from the returned asset object
+            const asset = await uploadMediaAsset(e.target.files[0], undefined, 'avatars');
+            setFormData(prev => ({ ...prev, avatar_url: asset.public_url }));
         } catch (err: any) {
             alert("Upload failed: " + err.message);
         } finally {

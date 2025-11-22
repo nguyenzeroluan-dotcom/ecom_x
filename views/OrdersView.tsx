@@ -97,15 +97,15 @@ const OrdersView: React.FC<OrdersViewProps> = ({ setView }) => {
       )}
 
       {!setupRequired && orders.length === 0 && !error ? (
-          <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
-              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i className="fas fa-box-open text-3xl text-slate-400"></i>
+          <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 animate-fade-in">
+              <div className="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce-small">
+                  <i className="fas fa-box-open text-4xl text-slate-400 dark:text-slate-500"></i>
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">No orders found</h3>
-              <p className="text-slate-500 mb-6">Start shopping to track your orders here.</p>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2 font-display">No Orders Yet</h3>
+              <p className="text-slate-500 mb-6">Your past orders will appear here once you've made a purchase.</p>
               <button 
                   onClick={() => setView(ViewState.HOME)}
-                  className="bg-primary text-white px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-indigo-600 transition-all"
+                  className="bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/30 hover:bg-indigo-600 transition-all"
               >
                   Browse Products
               </button>

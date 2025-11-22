@@ -1,11 +1,11 @@
 
 
-
 import React from 'react';
 import { INITIAL_SETUP_SQL } from '../../data/01_initial_setup';
 import { USER_RBAC_SQL } from '../../data/02_user_rbac';
 import { ROLES_PERMISSIONS_SQL } from '../../data/03_roles_permissions';
 import { INVENTORY_ADVANCED_SQL } from '../../data/04_inventory_advanced';
+import { MEDIA_MANAGER_SQL } from '../../data/05_media_manager';
 import { useNotification } from '../../contexts/NotificationContext';
 
 const SqlViewer: React.FC = () => {
@@ -15,6 +15,44 @@ const SqlViewer: React.FC = () => {
     navigator.clipboard.writeText(text);
     addNotification('success', `${label} SQL copied to clipboard!`);
   };
+
+  const scripts = [
+    {
+      title: '1. Core Schema (Products, Orders)',
+      description: 'Required for basic app functionality.',
+      sql: INITIAL_SETUP_SQL,
+      color: 'text-green-400',
+      label: 'Core'
+    },
+    {
+      title: '2. User Management & RBAC',
+      description: 'Required for user profiles, avatars, and admin permissions.',
+      sql: USER_RBAC_SQL,
+      color: 'text-blue-400',
+      label: 'RBAC'
+    },
+    {
+      title: '3. Advanced Roles & Permissions',
+      description: 'Required for custom role definitions.',
+      sql: ROLES_PERMISSIONS_SQL,
+      color: 'text-purple-400',
+      label: 'Roles'
+    },
+    {
+      title: '4. Advanced Inventory (Logs & SKU)',
+      description: 'Required for audit logs and SKU tracking.',
+      sql: INVENTORY_ADVANCED_SQL,
+      color: 'text-orange-400',
+      label: 'Inventory'
+    },
+    {
+      title: '5. Media Library (v2 Schema)',
+      description: 'Required for central media management. Includes dimensions, tags, etc.',
+      sql: MEDIA_MANAGER_SQL,
+      color: 'text-yellow-400',
+      label: 'Media'
+    }
+  ];
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -32,89 +70,27 @@ const SqlViewer: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-8">
-            {/* Core Schema */}
-            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <div>
-                        <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">1. Core Schema (Products, Orders)</h3>
-                        <p className="text-xs text-slate-500">Required for basic app functionality.</p>
+            {scripts.map(script => (
+                <div key={script.title} className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                    <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <div>
+                            <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{script.title}</h3>
+                            <p className="text-xs text-slate-500">{script.description}</p>
+                        </div>
+                        <button 
+                            onClick={() => handleCopy(script.sql, script.label)}
+                            className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
+                        >
+                            <i className="fas fa-copy"></i> Copy Script
+                        </button>
                     </div>
-                    <button 
-                        onClick={() => handleCopy(INITIAL_SETUP_SQL, 'Core')}
-                        className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
-                    >
-                        <i className="fas fa-copy"></i> Copy Script
-                    </button>
-                </div>
-                <div className="bg-slate-900 p-4 overflow-x-auto max-h-[200px] custom-scrollbar">
-                    <pre className="text-green-400 text-xs font-mono whitespace-pre-wrap leading-relaxed">
-                        {INITIAL_SETUP_SQL}
-                    </pre>
-                </div>
-            </div>
-
-            {/* RBAC Schema */}
-            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <div>
-                        <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">2. User Management & RBAC</h3>
-                        <p className="text-xs text-slate-500">Required for user profiles, avatars, and admin permissions.</p>
+                    <div className="bg-slate-900 p-4 overflow-x-auto max-h-[200px] custom-scrollbar">
+                        <pre className={`${script.color} text-xs font-mono whitespace-pre-wrap leading-relaxed`}>
+                            {script.sql}
+                        </pre>
                     </div>
-                    <button 
-                        onClick={() => handleCopy(USER_RBAC_SQL, 'RBAC')}
-                        className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
-                    >
-                        <i className="fas fa-copy"></i> Copy Script
-                    </button>
                 </div>
-                <div className="bg-slate-900 p-4 overflow-x-auto max-h-[200px] custom-scrollbar">
-                    <pre className="text-blue-400 text-xs font-mono whitespace-pre-wrap leading-relaxed">
-                        {USER_RBAC_SQL}
-                    </pre>
-                </div>
-            </div>
-
-            {/* Roles Schema */}
-            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <div>
-                        <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">3. Advanced Roles & Permissions</h3>
-                        <p className="text-xs text-slate-500">Required for custom role definitions.</p>
-                    </div>
-                    <button 
-                        onClick={() => handleCopy(ROLES_PERMISSIONS_SQL, 'Roles')}
-                        className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
-                    >
-                        <i className="fas fa-copy"></i> Copy Script
-                    </button>
-                </div>
-                <div className="bg-slate-900 p-4 overflow-x-auto max-h-[200px] custom-scrollbar">
-                    <pre className="text-purple-400 text-xs font-mono whitespace-pre-wrap leading-relaxed">
-                        {ROLES_PERMISSIONS_SQL}
-                    </pre>
-                </div>
-            </div>
-
-            {/* Inventory Advanced Schema */}
-            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <div>
-                        <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">4. Advanced Inventory (Logs & SKU)</h3>
-                        <p className="text-xs text-slate-500">Required for audit logs and SKU tracking.</p>
-                    </div>
-                    <button 
-                        onClick={() => handleCopy(INVENTORY_ADVANCED_SQL, 'Inventory')}
-                        className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
-                    >
-                        <i className="fas fa-copy"></i> Copy Script
-                    </button>
-                </div>
-                <div className="bg-slate-900 p-4 overflow-x-auto max-h-[200px] custom-scrollbar">
-                    <pre className="text-orange-400 text-xs font-mono whitespace-pre-wrap leading-relaxed">
-                        {INVENTORY_ADVANCED_SQL}
-                    </pre>
-                </div>
-            </div>
+            ))}
         </div>
       </div>
     </div>

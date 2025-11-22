@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback } from 'react';
 import { 
   supabase, 
@@ -8,7 +9,7 @@ import {
   deleteProduct,
   deleteProducts,
   seedProducts, 
-  uploadProductImage,
+  uploadMediaAsset,
   getCategories,
   createCategory,
   updateCategory,
@@ -17,9 +18,11 @@ import {
 import { identifyProductFromImage } from '../services/geminiService';
 import { Product, Category, ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useProductManager = () => {
   const { openModal } = useModal();
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,7 +212,8 @@ export const useProductManager = () => {
     setError(null);
     setSetupRequired(false);
     try {
-      return await uploadProductImage(file);
+      const asset = await uploadMediaAsset(file, user?.id);
+      return asset.public_url;
     } catch (err: any) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (err.message?.includes("Bucket not found") || err.message?.includes("Storage Upload Error")) {

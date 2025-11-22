@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useProductManager } from '../hooks/useProductManager';
 import ProductForm from '../components/manager/ProductForm';
@@ -8,6 +9,8 @@ import InventoryManager from '../components/manager/InventoryManager';
 import UserManager from '../components/manager/UserManager';
 import RoleManager from '../components/manager/RoleManager';
 import SqlViewer from '../components/manager/SqlViewer';
+import Dashboard from '../components/manager/Dashboard';
+import MediaManager from '../components/manager/MediaManager';
 import { Product, ManagerTab } from '../types';
 import { forecastInventory } from '../services/geminiService';
 import { DATABASE_SETUP_SQL } from '../services/supabaseClient';
@@ -43,7 +46,7 @@ const ManagerView: React.FC = () => {
     dismissError
   } = useProductManager();
   
-  const [activeTab, setActiveTab] = useState<ManagerTab>('PRODUCTS');
+  const [activeTab, setActiveTab] = useState<ManagerTab>('DASHBOARD');
   const [isEditing, setIsEditing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { isAdmin } = useAuth();
@@ -126,10 +129,11 @@ const ManagerView: React.FC = () => {
 
   const renderTabContent = () => {
       switch(activeTab) {
+          case 'DASHBOARD':
+              return <Dashboard products={products} setView={setActiveTab} />;
           case 'DATABASE':
               return <SqlViewer />;
           case 'USERS':
-              // RBAC Protection
               if (!isAdmin) {
                   return (
                       <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-red-100">
@@ -153,6 +157,8 @@ const ManagerView: React.FC = () => {
               return <RoleManager />;
           case 'INVENTORY':
               return <InventoryManager products={products} onRefresh={refreshData} />;
+          case 'MEDIA':
+              return <MediaManager />;
           case 'CATEGORIES':
               return <CategoryManager 
                   products={products} 
@@ -176,7 +182,6 @@ const ManagerView: React.FC = () => {
           default:
               return (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Form on left */}
                     <div className="lg:col-span-1">
                        <ProductForm
                            initialData={editingProduct}
@@ -185,12 +190,10 @@ const ManagerView: React.FC = () => {
                            onCancel={handleCancelEdit}
                            isLoading={loading}
                            isAnalyzing={isAnalyzing}
-                           onUpload={handleImageUpload}
                            onMagicAnalysis={handleMagicAnalysis}
                            availableCategories={uniqueCategories.filter(c => c !== 'All')}
                        />
                     </div>
-                    {/* Table on right */}
                     <div className="lg:col-span-2 space-y-4">
                         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                              <div className="relative flex-1 w-full">
@@ -228,7 +231,6 @@ const ManagerView: React.FC = () => {
                            onBulkDelete={handleDeleteProducts}
                        />
 
-                       {/* Pagination Controls */}
                        {totalPages > 1 && (
                             <div className="flex justify-center items-center gap-2 mt-4 text-sm">
                                 <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50">&laquo;</button>
@@ -244,9 +246,11 @@ const ManagerView: React.FC = () => {
   };
 
   const TABS: { id: ManagerTab, label: string, icon: string }[] = [
+      { id: 'DASHBOARD', label: 'Dashboard', icon: 'fa-home' },
       { id: 'PRODUCTS', label: 'Products', icon: 'fa-box' },
       { id: 'CATEGORIES', label: 'Categories', icon: 'fa-tags' },
       { id: 'INVENTORY', label: 'Inventory', icon: 'fa-warehouse' },
+      { id: 'MEDIA', label: 'Media', icon: 'fa-images' },
       { id: 'FORECAST', label: 'AI Forecast', icon: 'fa-chart-line' },
       { id: 'USERS', label: 'Users', icon: 'fa-users' },
       { id: 'ROLES', label: 'Roles', icon: 'fa-shield-alt' },
@@ -254,9 +258,8 @@ const ManagerView: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
+    <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-100 dark:bg-slate-950 min-h-screen">
       
-      {/* Dashboard Header */}
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
@@ -272,7 +275,6 @@ const ManagerView: React.FC = () => {
            </button>
       </div>
 
-      {/* Error & Setup Guide */}
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm animate-fade-in">
            <div className="flex items-center">
@@ -287,7 +289,6 @@ const ManagerView: React.FC = () => {
         </div>
       )}
       
-      {/* Navigation Tabs */}
       <div className="mb-6 border-b border-slate-200 dark:border-slate-700">
           <nav className="-mb-px flex space-x-6 overflow-x-auto no-scrollbar">
               {TABS.map(tab => (
@@ -308,7 +309,6 @@ const ManagerView: React.FC = () => {
           </nav>
       </div>
 
-      {/* Main Content Area */}
       <div>
         {renderTabContent()}
       </div>

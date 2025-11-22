@@ -9,9 +9,10 @@ import { useAuth } from '../contexts/AuthContext';
 interface HeaderProps {
   currentView: ViewState;
   setView: (view: ViewState) => void;
+  toggleCommandPalette: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
+const Header: React.FC<HeaderProps> = ({ currentView, setView, toggleCommandPalette }) => {
   const { toggleCart, itemCount } = useCart();
   const { isDarkMode, toggleTheme, wishlist, toggleWishlistDrawer } = usePreferences();
   const { openModal } = useModal();
@@ -69,17 +70,26 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                   onClick={() => setView(item.id)}
                   className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center ${
                     currentView === item.id
-                      ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-400'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-indigo-300'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <i className={`fas ${item.icon} mr-2 ${currentView === item.id ? 'text-primary dark:text-primary-400' : 'text-slate-400'}`}></i>
+                  <i className={`fas ${item.icon} mr-2 ${currentView === item.id ? 'text-primary dark:text-indigo-400' : 'text-slate-400'}`}></i>
                   {item.label}
                 </button>
               ))}
             </nav>
 
             <div className="flex items-center border-l border-slate-200 dark:border-slate-700 pl-2 ml-2 space-x-1">
+                {/* Search Button */}
+                 <button
+                    onClick={toggleCommandPalette}
+                    className="w-10 h-10 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-400 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                    title="Search & Navigate (Ctrl+K)"
+                >
+                    <i className="fas fa-search"></i>
+                </button>
+
                 {/* Theme Toggle */}
                 <button
                     onClick={toggleTheme}
@@ -104,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                 {/* Cart Toggle */}
                 <button 
                 onClick={toggleCart}
-                className="relative w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all group"
+                className="relative w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all group"
                 >
                 <i className="fas fa-shopping-cart text-lg group-hover:scale-110 transition-transform"></i>
                 {itemCount > 0 && (
@@ -131,24 +141,24 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
 
                     {/* Dropdown Menu */}
                     {showUserMenu && user && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-800 py-2 animate-fade-in-up transform origin-top-right z-50">
-                             <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 animate-scale-in transform origin-top-right z-50">
+                             <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
                                  <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{user.full_name || 'User'}</p>
                                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
                              </div>
                              <button 
                                 onClick={() => { setView(ViewState.PROFILE); setShowUserMenu(false); }}
-                                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
                              >
                                  <i className="fas fa-id-card mr-2 text-slate-400"></i> My Profile
                              </button>
                              <button 
                                 onClick={() => { setView(ViewState.ORDERS); setShowUserMenu(false); }}
-                                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
                              >
                                  <i className="fas fa-box mr-2 text-slate-400"></i> My Orders
                              </button>
-                             <div className="border-t border-slate-100 dark:border-slate-800 mt-2 pt-2">
+                             <div className="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2">
                                  <button 
                                     onClick={handleLogout}
                                     className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -165,13 +175,13 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
       </div>
       
       {/* Mobile Navigation */}
-      <div className="md:hidden border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-between py-2 overflow-x-auto no-scrollbar px-2">
+      <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex justify-between py-2 overflow-x-auto no-scrollbar px-2">
          {visibleNavItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setView(item.id)}
               className={`p-2 min-w-[60px] rounded-md flex flex-col items-center flex-shrink-0 ${
-                currentView === item.id ? 'text-primary dark:text-primary-400' : 'text-slate-500 dark:text-slate-400'
+                currentView === item.id ? 'text-primary dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               <i className={`fas ${item.icon} text-lg mb-1`}></i>

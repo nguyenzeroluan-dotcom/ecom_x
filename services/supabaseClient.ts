@@ -1,16 +1,38 @@
 
+
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../constants';
-import { Product, Order, CartItem, UserProfile, Category, AppRole, InventoryLog } from '../types';
+import { Product, Order, CartItem, UserProfile, Category, AppRole, InventoryLog, MediaAsset } from '../types';
 import { INITIAL_SETUP_SQL } from '../data/01_initial_setup';
 import { USER_RBAC_SQL } from '../data/02_user_rbac';
 import { ROLES_PERMISSIONS_SQL } from '../data/03_roles_permissions';
 import { INVENTORY_ADVANCED_SQL } from '../data/04_inventory_advanced';
+import { MEDIA_MANAGER_SQL } from '../data/05_media_manager';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Combined SQL for Database Setup
-export const DATABASE_SETUP_SQL = INITIAL_SETUP_SQL + '\n\n' + USER_RBAC_SQL + '\n\n' + ROLES_PERMISSIONS_SQL + '\n\n' + INVENTORY_ADVANCED_SQL;
+export const DATABASE_SETUP_SQL = INITIAL_SETUP_SQL + '\n\n' + USER_RBAC_SQL + '\n\n' + ROLES_PERMISSIONS_SQL + '\n\n' + INVENTORY_ADVANCED_SQL + '\n\n' + MEDIA_MANAGER_SQL;
+
+// --- Helper Functions ---
+const getImageDimensions = (file: File): Promise<{ width: number, height: number }> => {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      resolve({ width: 0, height: 0 });
+      return;
+    }
+    const img = document.createElement('img');
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height });
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => {
+      resolve({ width: 0, height: 0 });
+    };
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 
 // --- Product Services ---
 
@@ -206,14 +228,29 @@ export const updateCategoryName = async (oldName: string, newName: string): Prom
     }
 };
 
-export const uploadProductImage = async (file: File, bucket: string = 'product-images'): Promise<string> => {
+// --- Media Services (NEW) ---
+
+export const getMediaAssets = async (): Promise<MediaAsset[]> => {
+    const { data, error } = await supabase
+        .from('media_assets')
+        .select('*')
+        .order('created_at', { ascending: false });
+    
+    if (error) {
+        if (error.code === '42P01') return []; // Table doesn't exist yet
+        throw new Error(error.message);
+    }
+    return data as MediaAsset[];
+};
+
+export const uploadMediaAsset = async (file: File, userId?: string, bucket: string = 'product-images'): Promise<MediaAsset> => {
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}.${fileExt}`;
-  const filePath = `${fileName}`;
-
+  
+  // 1. Upload to Storage
   const { error: uploadError } = await supabase.storage
     .from(bucket)
-    .upload(filePath, file);
+    .upload(fileName, file);
 
   if (uploadError) {
     if (uploadError.message.includes('row-level security') || uploadError.message === 'new row violates row-level security policy') {
@@ -222,16 +259,126 @@ export const uploadProductImage = async (file: File, bucket: string = 'product-i
     throw new Error(`Storage Upload Error: ${uploadError.message}`);
   }
 
-  const { data } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(filePath);
-
-  if (!data?.publicUrl) {
+  // 2. Get Public URL
+  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fileName);
+  if (!urlData?.publicUrl) {
     throw new Error("Could not get public URL for the uploaded image. Check storage policies.");
   }
 
-  return data.publicUrl;
+  // Get image dimensions
+  const { width, height } = await getImageDimensions(file);
+
+  // 3. Insert Metadata into DB
+  const assetData = {
+      file_name: file.name,
+      file_path: fileName,
+      public_url: urlData.publicUrl,
+      mime_type: file.type,
+      size: file.size,
+      width: width,
+      height: height,
+      user_id: userId && userId !== 'demo-user-123' ? userId : undefined
+  };
+
+  const { data, error: dbError } = await supabase
+      .from('media_assets')
+      .insert([assetData])
+      .select()
+      .single();
+  
+  if (dbError) {
+      // Attempt to clean up storage if DB insert fails
+      await supabase.storage.from(bucket).remove([fileName]);
+      throw new Error(`DB Error: ${dbError.message}`);
+  }
+
+  return data as MediaAsset;
 };
+
+export const deleteMediaAsset = async (asset: MediaAsset): Promise<void> => {
+    // 1. Delete from Storage
+    const bucket = asset.public_url.includes('/avatars/') ? 'avatars' : 'product-images';
+    const { error: storageError } = await supabase.storage
+        .from(bucket)
+        .remove([asset.file_path]);
+
+    if (storageError) console.warn("Storage deletion failed:", storageError.message); // non-blocking
+
+    // 2. Delete from DB
+    const { error: dbError } = await supabase
+        .from('media_assets')
+        .delete()
+        .eq('id', asset.id);
+
+    if (dbError) throw new Error(dbError.message);
+};
+
+export const deleteMediaAssets = async (assets: MediaAsset[]): Promise<void> => {
+    if (assets.length === 0) return;
+
+    // Separate by bucket
+    const toDelete: { [bucket: string]: string[] } = {};
+    for (const asset of assets) {
+        const bucket = asset.public_url.includes('/avatars/') ? 'avatars' : 'product-images';
+        if (!toDelete[bucket]) toDelete[bucket] = [];
+        toDelete[bucket].push(asset.file_path);
+    }
+
+    // Delete from storage
+    for (const bucket in toDelete) {
+        await supabase.storage.from(bucket).remove(toDelete[bucket]);
+    }
+    
+    // Delete from DB
+    const ids = assets.map(a => a.id);
+    const { error } = await supabase
+        .from('media_assets')
+        .delete()
+        .in('id', ids);
+    
+    if (error) throw new Error(error.message);
+};
+
+export const syncProductImagesToAssets = async (): Promise<number> => {
+    // 1. Get all product image URLs
+    const { data: products, error: prodError } = await supabase.from('products').select('image_url');
+    if (prodError) throw new Error(prodError.message);
+
+    // 2. Get all existing asset URLs
+    const { data: assets, error: assetError } = await supabase.from('media_assets').select('public_url');
+    if (assetError) throw new Error(assetError.message);
+    
+    const existingUrls = new Set(assets.map(a => a.public_url));
+    const uniqueProductUrls = new Set(products.map(p => p.image_url).filter(url => url && url.startsWith(SUPABASE_URL)));
+
+    // 3. Find URLs that are in products but not in media_assets
+    const urlsToSync = Array.from(uniqueProductUrls).filter(url => !existingUrls.has(url));
+
+    if (urlsToSync.length === 0) {
+        return 0; // Nothing to sync
+    }
+
+    // 4. Create new asset records for them
+    const newAssets = urlsToSync.map(url => {
+        // FIX: The 'url' variable can be of type 'unknown' here due to type inference from Set<any>.
+        // Cast to string to safely use the .split() method.
+        const pathSegments = String(url).split('/');
+        const fileName = pathSegments.pop() || 'synced-image.jpg';
+        return {
+            file_name: fileName,
+            file_path: fileName,
+            public_url: url,
+            mime_type: 'image/jpeg', // Best guess
+            size: 0, // Unknown size
+        };
+    });
+
+    const { error: insertError } = await supabase.from('media_assets').insert(newAssets);
+    if (insertError) throw new Error(insertError.message);
+
+    return newAssets.length;
+};
+
 
 // --- Order Services ---
 

@@ -1,7 +1,9 @@
 
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Product } from '../../types';
+
+import React, { useState, useEffect } from 'react';
+import { Product, ModalType } from '../../types';
+import { useModal } from '../../contexts/ModalContext';
 
 interface ProductFormProps {
   initialData?: Product | null;
@@ -10,7 +12,6 @@ interface ProductFormProps {
   isEditing: boolean;
   isLoading: boolean;
   isAnalyzing: boolean;
-  onUpload: (file: File) => Promise<string | null>;
   onMagicAnalysis: (file: File) => Promise<any>;
   availableCategories?: string[];
 }
@@ -22,11 +23,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
   isEditing,
   isLoading,
   isAnalyzing,
-  onUpload,
   onMagicAnalysis,
   availableCategories = []
 }) => {
-  // Ensure we always have at least a default
+  const { openModal } = useModal();
   const categories = availableCategories.length > 0 ? availableCategories : ['Home', 'Electronics', 'Fashion', 'Office', 'Art'];
 
   const [formData, setFormData] = useState({
@@ -40,8 +40,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   });
 
   const [isCustomCategory, setIsCustomCategory] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const magicInputRef = useRef<HTMLInputElement>(null);
+  const magicInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -75,11 +74,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const url = await onUpload(e.target.files[0]);
-      if (url) setFormData(prev => ({ ...prev, image_url: url }));
-    }
+  const openMediaLibrary = () => {
+      openModal(ModalType.MEDIA_SELECTOR, {
+          onSelect: (url: string) => {
+              setFormData(prev => ({ ...prev, image_url: url }));
+          }
+      });
   };
 
   const handleMagicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +95,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
           image_url: data.image_url || '',
           stock: '20'
         });
-        // Auto-gen SKU after magic import
         setTimeout(() => generateSku(), 100);
       }
       if (magicInputRef.current) magicInputRef.current.value = '';
@@ -121,7 +120,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* AI Magic Card */}
       {!isEditing && (
         <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4">
@@ -147,7 +145,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       )}
 
-      {/* Form Body */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sticky top-24">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">{isEditing ? 'Edit Product' : 'Add New Product'}</h2>
@@ -227,15 +224,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product Image</label>
-            {formData.image_url && (
-              <div className="mb-3 relative group w-full h-40 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden">
-                <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
-              </div>
-            )}
-            <div className="flex gap-2">
-               <button type="button" onClick={() => fileInputRef.current?.click()} className="px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 dark:text-slate-300">Upload</button>
-               <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
-               <input type="text" name="image_url" value={formData.image_url} onChange={handleInputChange} placeholder="Or paste URL..." className="flex-1 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none dark:bg-slate-900 dark:text-white" />
+            <div className="flex gap-4">
+               <div className="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center">
+                 {formData.image_url ? (
+                   <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                 ) : (
+                   <i className="fas fa-image text-2xl text-slate-300"></i>
+                 )}
+               </div>
+               <div className="flex flex-col justify-center">
+                  <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 dark:text-slate-300 font-bold">Select Image</button>
+                  <p className="text-xs text-slate-400 mt-2">Choose from library or upload new.</p>
+               </div>
             </div>
           </div>
 

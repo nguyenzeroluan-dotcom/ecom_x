@@ -16,7 +16,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
   const { openModal } = useModal();
   const { addToCart } = useCart();
   const { addNotification } = useNotification();
-  const { wishlist, toggleWishlist, addToRecentlyViewed } = usePreferences();
+  const { wishlist, toggleWishlist, addToRecentlyViewed, addToCompare } = usePreferences();
   
   const stock = product.stock !== undefined ? product.stock : 10;
   const isLowStock = stock > 0 && stock < 5;
@@ -46,6 +46,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
     toggleWishlist(product.id);
     addNotification('info', isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
   };
+
+  const handleAddToCompare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addToCompare(product);
+    addNotification('info', `${product.name} added to comparison.`);
+  };
+
 
   // Base delay for staggered animation
   const animationDelay = `${index * 50}ms`;
@@ -114,7 +121,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 z-10 pointer-events-none"></div>
 
         {/* Overlay Actions */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 z-10"></div>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-gradient-to-t from-black/60 to-transparent transition-all duration-300 z-10"></div>
 
         {/* Glassmorphic Action Buttons */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
@@ -123,6 +130,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
              </button>
              <button onClick={handleWishlist} className={`w-10 h-10 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 rounded-xl shadow-lg border border-white/20 flex items-center justify-center transition-all duration-200 ${isWishlisted ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`} title="Wishlist">
                  <i className={`${isWishlisted ? 'fas' : 'far'} fa-heart`}></i>
+             </button>
+              <button onClick={handleAddToCompare} className="w-10 h-10 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 text-slate-800 dark:text-white rounded-xl shadow-lg border border-white/20 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all duration-200" title="Add to Compare">
+                 <i className="fas fa-balance-scale-right"></i>
              </button>
         </div>
 

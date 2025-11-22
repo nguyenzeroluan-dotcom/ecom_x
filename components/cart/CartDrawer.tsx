@@ -80,15 +80,16 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ setView }) => {
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-6">
-              <div className="w-32 h-32 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center animate-pulse-slow">
-                <i className="fas fa-shopping-bag text-5xl text-slate-300 dark:text-slate-600"></i>
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-6 text-center animate-fade-in">
+              <div className="w-32 h-32 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center relative">
+                <i className="fas fa-shopping-cart text-5xl text-slate-300 dark:text-slate-600"></i>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold animate-bounce-small">?</div>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">Your cart is empty</p>
-                <p className="text-slate-500 dark:text-slate-500 text-sm max-w-[200px] mx-auto">Looks like you haven't discovered our smart products yet.</p>
+                <p className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">Your Cart is Empty</p>
+                <p className="text-slate-500 dark:text-slate-500 text-sm max-w-[240px] mx-auto">Looks like you haven't added anything yet. Let's change that!</p>
               </div>
-              <button onClick={toggleCart} className="bg-slate-900 dark:bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-primary transition-all">
+              <button onClick={toggleCart} className="bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/30 hover:bg-indigo-600 transition-all">
                 Start Shopping
               </button>
             </div>
@@ -160,7 +161,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ setView }) => {
         </div>
 
         {items.length > 0 && (
-          <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-surface dark:bg-slate-900 space-y-4">
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-4">
              <div className="space-y-2">
                 <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 text-sm">
                   <span>Subtotal</span>

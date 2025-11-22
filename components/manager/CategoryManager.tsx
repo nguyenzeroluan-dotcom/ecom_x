@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { Product, Category, CategoryData, ModalType } from '../../types';
-import { updateCategoryName, uploadProductImage } from '../../services/supabaseClient';
+// FIX: Replaced non-existent 'uploadProductImage' with 'uploadMediaAsset'
+import { updateCategoryName, uploadMediaAsset } from '../../services/supabaseClient';
 import { useModal } from '../../contexts/ModalContext';
 import { useProductManager } from '../../hooks/useProductManager'; // For actions context if needed, but props here
 
@@ -93,8 +94,9 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
       if (e.target.files?.[0]) {
           setUploading(true);
           try {
-              const url = await uploadProductImage(e.target.files[0]);
-              setFormData(prev => ({ ...prev, image_url: url }));
+              // FIX: Use the 'public_url' property from the returned asset object
+              const asset = await uploadMediaAsset(e.target.files[0]);
+              setFormData(prev => ({ ...prev, image_url: asset.public_url }));
           } catch (err: any) {
               alert("Upload failed: " + err.message);
           } finally {

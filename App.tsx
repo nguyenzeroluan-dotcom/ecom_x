@@ -25,10 +25,25 @@ import Footer from './components/common/Footer';
 import PromoBanner from './components/PromoBanner';
 import FloatingAIButton from './components/FloatingAIButton';
 import BackToTop from './components/common/BackToTop';
+import CommandPalette from './components/CommandPalette';
 
 const AppContent: React.FC = () => {
   const [view, setView] = useState<ViewState>(ViewState.HOME);
   const { isAdmin } = useAuth();
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global key listener for Command Palette
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
 
   // Scroll to top when view changes
   useEffect(() => {
@@ -38,7 +53,7 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case ViewState.HOME:
-        return <MarketView />;
+        return <MarketView setView={setView} />;
       case ViewState.CHAT:
         return <div className="max-w-4xl mx-auto px-4 py-8"><ChatBot /></div>;
       case ViewState.GENERATE:
@@ -60,8 +75,14 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handlePaletteSelect = (selectedView: ViewState) => {
+    setView(selectedView);
+    setIsCommandPaletteOpen(false);
+  };
+
   return (
-    <MainLayout currentView={view} setView={setView}>
+    <MainLayout currentView={view} setView={setView} toggleCommandPalette={() => setIsCommandPaletteOpen(true)}>
+      <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setIsCommandPaletteOpen} onSelect={handlePaletteSelect} />
       <PromoBanner />
       <div className="min-h-screen flex flex-col dark:bg-slate-900 transition-colors duration-300">
         <div className="flex-grow">
