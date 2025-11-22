@@ -292,7 +292,7 @@ const ManagerView: React.FC = () => {
       </div>
 
       {/* Error Banner for Database Setup */}
-      {(state.setupRequired || (state.error && state.products.length === 0)) && (
+      {(state.setupRequired || state.error) && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm animate-fade-in">
               <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -300,7 +300,7 @@ const ManagerView: React.FC = () => {
                   </div>
                   <div className="ml-3 w-full">
                       <h3 className="text-lg font-bold text-red-800 mb-1">
-                          {state.setupRequired ? "Database Setup Required" : "Connection Error"}
+                          {state.setupRequired ? "Database Setup Required" : "Error"}
                       </h3>
                       <p className="text-sm text-red-700 mb-3">
                           {state.error || "Missing database tables detected."}

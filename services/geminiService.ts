@@ -41,9 +41,7 @@ export const generateImage = async (prompt: string, aspectRatio: AspectRatio) =>
   
   const response = await ai.models.generateContent({
     model: GEMINI_IMAGE_GEN_MODEL,
-    contents: {
-      parts: [{ text: prompt }],
-    },
+    contents: [{ text: prompt }],
     config: {
       imageConfig: {
         aspectRatio: aspectRatio,
@@ -68,12 +66,10 @@ export const analyzeImage = async (base64Image: string, mimeType: string, prompt
   const ai = getAIClient();
   const response = await ai.models.generateContent({
     model: GEMINI_VISION_MODEL,
-    contents: {
-      parts: [
-        { inlineData: { mimeType: mimeType, data: base64Image } },
-        { text: prompt }
-      ]
-    }
+    contents: [
+      { inlineData: { mimeType: mimeType, data: base64Image } },
+      { text: prompt }
+    ]
   });
   return response.text;
 };
@@ -83,12 +79,10 @@ export const identifyProductFromImage = async (base64Image: string, mimeType: st
   const ai = getAIClient();
   const response = await ai.models.generateContent({
     model: GEMINI_VISION_MODEL,
-    contents: {
-      parts: [
-        { inlineData: { mimeType: mimeType, data: base64Image } },
-        { text: "Analyze this image. Return JSON with creative name, predicted price (number), category (Home, Electronics, Fashion, Office, or Art), and description." }
-      ]
-    },
+    contents: [
+      { inlineData: { mimeType: mimeType, data: base64Image } },
+      { text: "Analyze this image. Return JSON with creative name, predicted price (number), category (Home, Electronics, Fashion, Office, or Art), and description." }
+    ],
     config: {
       responseMimeType: "application/json",
       responseSchema: {

@@ -226,6 +226,10 @@ export const uploadProductImage = async (file: File, bucket: string = 'product-i
     .from(bucket)
     .getPublicUrl(filePath);
 
+  if (!data?.publicUrl) {
+    throw new Error("Could not get public URL for the uploaded image. Check storage policies.");
+  }
+
   return data.publicUrl;
 };
 

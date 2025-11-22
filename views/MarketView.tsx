@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../components/ProductCard';
 import { Product, ModalType, MarketViewMode, SortOption } from '../types';
@@ -8,8 +7,6 @@ import { useModal } from '../contexts/ModalContext';
 import { compareProductsAI } from '../services/geminiService';
 import HeroCarousel from '../components/HeroCarousel';
 import ProductFilters from '../components/ProductFilters';
-
-const CATEGORIES = ["All", "Home", "Electronics", "Fashion", "Office", "Art"];
 
 const ProductSkeleton = () => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden h-full flex flex-col shadow-sm relative">
@@ -58,6 +55,15 @@ const MarketView: React.FC = () => {
     };
     fetch();
   }, []);
+
+  // Dynamically generate categories from products
+  const dynamicCategories = useMemo(() => {
+    if (products.length === 0) {
+      return ["All"];
+    }
+    const uniqueCategories = new Set(products.map(p => p.category).filter((c): c is string => !!c));
+    return ["All", ...Array.from(uniqueCategories).sort()];
+  }, [products]);
 
   const handleRunComparison = async () => {
     if (compareList.length < 2) return;
@@ -138,7 +144,7 @@ const MarketView: React.FC = () => {
             {/* Left Sidebar Filters */}
             <div className="hidden lg:block col-span-1">
                 <ProductFilters 
-                    categories={CATEGORIES}
+                    categories={dynamicCategories}
                     selectedCategory={selectedCategory}
                     onSelectCategory={setSelectedCategory}
                     priceRange={priceRange}
@@ -172,7 +178,7 @@ const MarketView: React.FC = () => {
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                                 className="h-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border-transparent text-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                             >
-                                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                {dynamicCategories.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
                         <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
@@ -214,7 +220,10 @@ const MarketView: React.FC = () => {
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {recentlyViewed.map(product => (
-                        <div key={product.id} className="group cursor-pointer bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm hover:shadow-lg border border-slate-100 dark:border-slate-700 transition-all">
+                        <div 
+                           key={product.id} 
+                           onClick={() => openModal(ModalType.PRODUCT_DETAIL, { product })}
+                           className="group cursor-pointer bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm hover:shadow-lg border border-slate-100 dark:border-slate-700 transition-all">
                              <div className="aspect-square rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden mb-3 relative">
                                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                              </div>
