@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Product, ModalType } from '../../types';
 import { useModal } from '../../contexts/ModalContext';
-import { getCollectionDetails } from '../../services/mediaService';
 
 interface ProductFormProps {
   initialData?: Product | null;
@@ -56,11 +55,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         stock: initialData.stock !== undefined ? initialData.stock.toString() : '10',
         collection_id: initialData.collection_id
       });
-      if (initialData.collection_id) {
-          setGalleryImageCount(initialData.gallery_images?.length || 0);
-      } else {
-          setGalleryImageCount(0);
-      }
+      setGalleryImageCount(initialData.gallery_images?.length || 0);
     } else {
       setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20', collection_id: undefined });
       setGalleryImageCount(0);
@@ -98,6 +93,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
               setGalleryImageCount(media.imageCount || 0);
           }
       });
+  };
+
+  const handlePasteUrl = () => {
+      const url = prompt("Enter the image URL:", formData.image_url);
+      if (url) {
+          setFormData(prev => ({ ...prev, image_url: url, collection_id: undefined }));
+          setGalleryImageCount(0);
+      }
   };
 
   const handleMagicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,39 +246,44 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <textarea name="description" rows={3} value={formData.description} onChange={handleInputChange} className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:outline-none resize-none dark:bg-slate-900 dark:text-white" placeholder="Product details..." />
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-700/40 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Product Media</label>
-            <div className="flex gap-4 items-center">
-               <div className="w-28 h-28 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center relative group">
-                 {formData.image_url ? (
-                   <>
-                    <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
-                    {formData.collection_id && galleryImageCount > 0 && (
-                        <div className="absolute bottom-1 right-1 bg-slate-900/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <i className="fas fa-images"></i> +{galleryImageCount}
+           <div className="bg-slate-50 dark:bg-slate-700/40 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                <div className="flex justify-between items-center mb-3">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Product Media</label>
+                    <button type="button" onClick={handlePasteUrl} className="text-xs text-slate-500 hover:text-primary font-medium flex items-center gap-1">
+                        <i className="fas fa-link"></i> Paste URL
+                    </button>
+                </div>
+                <div className="flex gap-4">
+                    <div className="w-32 h-32 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center relative group">
+                        {formData.image_url ? (
+                            <>
+                                <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                                {formData.collection_id && galleryImageCount > 0 && (
+                                    <div className="absolute bottom-1 right-1 bg-slate-900/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                        <i className="fas fa-images"></i> +{galleryImageCount}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <i className="fas fa-image text-4xl text-slate-400"></i>
+                        )}
+                        <div 
+                            onClick={openMediaLibrary} 
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        >
+                            <i className="fas fa-pen"></i> Change
                         </div>
-                    )}
-                   </>
-                 ) : (
-                   <i className="fas fa-image text-3xl text-slate-400"></i>
-                 )}
-                 <div 
-                    onClick={openMediaLibrary} 
-                    className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                 >
-                    <i className="fas fa-pen"></i>
-                 </div>
-               </div>
-               <div className="flex flex-col gap-2">
-                  <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-white dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-600 shadow-sm">
-                    {formData.image_url ? 'Change Media' : 'Set Media'}
-                  </button>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px]">
-                    {formData.collection_id ? `Gallery assigned (+${galleryImageCount} images)` : 'Set a cover image or assign a gallery.'}
-                  </p>
-               </div>
-            </div>
-          </div>
+                    </div>
+                    <div className="flex flex-col justify-center gap-2">
+                         <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-white dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-600 shadow-sm">
+                            <i className="fas fa-folder-open mr-2"></i> Set Media from Library
+                        </button>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px]">
+                            Set a cover image or assign a product gallery.
+                        </p>
+                    </div>
+                </div>
+           </div>
 
           <button type="submit" disabled={isLoading} className={`w-full py-3 rounded-xl font-bold text-white shadow-lg transition-all flex justify-center items-center ${isEditing ? 'bg-secondary hover:bg-green-600 shadow-green-500/20' : 'bg-primary hover:bg-indigo-600 shadow-indigo-500/20'} disabled:opacity-50`}>
             {isLoading ? <><i className="fas fa-spinner fa-spin mr-2"></i> Processing...</> : isEditing ? <><i className="fas fa-save mr-2"></i> Update Product</> : <><i className="fas fa-plus mr-2"></i> Add Product</>}

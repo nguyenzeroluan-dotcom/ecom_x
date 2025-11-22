@@ -1,8 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useProductManager } from '../hooks/useProductManager';
-import { ManagerTab } from '../types';
+import { ManagerTab, UserProfile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import AccessDeniedView from './AccessDeniedView';
+
+// Import Layout Components
+import ManagerSidebar from '../components/manager/ManagerSidebar';
+import ManagerHeader from '../components/manager/ManagerHeader';
 
 // Import Tab Components
 import Dashboard from '../components/manager/Dashboard';
@@ -14,6 +17,7 @@ import ForecastManager from '../components/manager/ForecastManager';
 import UserManager from '../components/manager/UserManager';
 import RoleManager from '../components/manager/RoleManager';
 import SqlViewer from '../components/manager/SqlViewer';
+import AccessDeniedView from './AccessDeniedView';
 
 const DEMO_DATA = [
   { name: "Ultra-Slim 4K Monitor", price: 349.99, category: "Electronics", description: "27-inch display with HDR support.", image_url: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=400&q=80", stock: 12 },
@@ -23,7 +27,7 @@ const DEMO_DATA = [
   { name: "Ergonomic Mesh Chair", price: 249.00, category: "Office", description: "High-back chair with lumbar support.", image_url: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&w=400&q=80", stock: 3 },
 ];
 
-const TABS: { id: ManagerTab, label: string, icon: string, adminOnly: boolean }[] = [
+export const TABS: { id: ManagerTab, label: string, icon: string, adminOnly: boolean }[] = [
     { id: 'DASHBOARD', label: 'Dashboard', icon: 'fa-home', adminOnly: false },
     { id: 'PRODUCTS', label: 'Products', icon: 'fa-box', adminOnly: false },
     { id: 'CATEGORIES', label: 'Categories', icon: 'fa-tags', adminOnly: false },
@@ -58,7 +62,7 @@ const ManagerView: React.FC = () => {
   
     const [activeTab, setActiveTab] = useState<ManagerTab>('DASHBOARD');
     const [productCategoryFilter, setProductCategoryFilter] = useState('All');
-    const { isAdmin } = useAuth();
+    const { user, signOut, isAdmin } = useAuth();
   
     const uniqueCategories = useMemo(() => {
         const cats = new Set(products.map(p => p.category || 'Uncategorized'));
@@ -71,7 +75,6 @@ const ManagerView: React.FC = () => {
         setActiveTab('PRODUCTS');
     };
     
-    // Using a map for cleaner rendering logic and prop drilling
     const tabComponents: Record<ManagerTab, React.ReactNode> = {
         DASHBOARD: <Dashboard products={products} setView={setActiveTab} />,
         PRODUCTS: <ProductManager 
@@ -102,62 +105,47 @@ const ManagerView: React.FC = () => {
         DATABASE: isAdmin ? <SqlViewer /> : <AccessDeniedView setView={() => setActiveTab('DASHBOARD')} />,
     };
 
-    const visibleTabs = TABS.filter(tab => !tab.adminOnly || isAdmin);
+    const currentTabInfo = TABS.find(t => t.id === activeTab) || TABS[0];
 
     return (
-        <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-100 dark:bg-slate-950 min-h-screen">
-          <div className="mb-8 flex flex-col md:flex-row justify-between items-start gap-4">
-            <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
-                <p className="text-slate-500">Real-time inventory and user management</p>
+        <div className="bg-slate-100 dark:bg-slate-950 min-h-screen">
+            <div className="relative lg:flex">
+                <ManagerSidebar 
+                    tabs={TABS}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    user={user as UserProfile}
+                    signOut={signOut}
+                    isAdmin={isAdmin}
+                />
+                <main className="flex-1 lg:ml-64">
+                    <div className="py-8 px-4 sm:px-6 lg:px-8">
+                        <ManagerHeader 
+                            title={currentTabInfo.label}
+                            onSeedData={() => handleSeedData(DEMO_DATA)}
+                            seeding={seeding}
+                        />
+
+                        {error && (
+                            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-6 rounded-r-xl shadow-sm animate-fade-in">
+                            <div className="flex items-center">
+                                <i className="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                                <div>
+                                    <h4 className="font-bold text-red-800 dark:text-red-300">Error</h4>
+                                    <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                                    {setupRequired && <p className="text-sm text-red-700 dark:text-red-400 mt-1">Please go to the 'SQL Setup' tab to resolve.</p>}
+                                </div>
+                                <button onClick={dismissError} className="ml-auto text-red-500"><i className="fas fa-times"></i></button>
+                            </div>
+                            </div>
+                        )}
+                        
+                        <div>
+                            {tabComponents[activeTab]}
+                        </div>
+                    </div>
+                </main>
             </div>
-            <button
-                onClick={() => handleSeedData(DEMO_DATA)}
-                disabled={seeding}
-                className="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-xl font-medium transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {seeding ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-database mr-2"></i>}
-                {seeding ? "Adding Data..." : "Generate Demo Data"}
-            </button>
-          </div>
-    
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm animate-fade-in">
-               <div className="flex items-center">
-                 <i className="fas fa-exclamation-circle text-red-500 mr-3"></i>
-                 <div>
-                    <h4 className="font-bold text-red-800 dark:text-red-300">Error</h4>
-                    <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
-                    {setupRequired && <p className="text-sm text-red-700 dark:text-red-400 mt-1">Please go to the 'SQL Setup' tab to resolve.</p>}
-                 </div>
-                 <button onClick={dismissError} className="ml-auto text-red-500"><i className="fas fa-times"></i></button>
-               </div>
-            </div>
-          )}
-          
-          <div className="mb-6 border-b border-slate-200 dark:border-slate-700">
-              <nav className="-mb-px flex space-x-6 overflow-x-auto no-scrollbar">
-                  {visibleTabs.map(tab => (
-                      <button 
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors
-                              ${activeTab === tab.id 
-                                  ? 'border-primary text-primary' 
-                                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300'
-                              }
-                          `}
-                      >
-                          <i className={`fas ${tab.icon} mr-2 opacity-70`}></i>
-                          {tab.label}
-                      </button>
-                  ))}
-              </nav>
-          </div>
-    
-          <div>
-            {tabComponents[activeTab]}
-          </div>
         </div>
     );
 };

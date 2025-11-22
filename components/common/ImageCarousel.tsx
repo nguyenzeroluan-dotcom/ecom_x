@@ -49,7 +49,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, autoPlay = f
             </div>
 
             {/* Controls */}
-            {!autoPlay && images.length > 1 && (
+            {images.length > 1 && (
                 <>
                     <button onClick={goToPrevious} className="absolute top-1/2 left-3 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-100 scale-90">
                         <i className="fas fa-chevron-left text-slate-800 dark:text-white"></i>
@@ -59,7 +59,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, autoPlay = f
                     </button>
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                         {images.map((_, index) => (
-                            <div key={index} onClick={() => setCurrentIndex(index)} className={`h-2 w-2 rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm ${currentIndex === index ? 'bg-white scale-125' : 'bg-white/50'}`}></div>
+                            <div key={index} onClick={() => setCurrentIndex(index)} className={`h-2 rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm ${currentIndex === index ? 'bg-white w-6' : 'bg-white/50 w-2'}`}></div>
                         ))}
                     </div>
                 </>

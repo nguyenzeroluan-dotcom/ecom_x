@@ -1,3 +1,4 @@
+
 import { supabase } from './supabaseClient';
 import { SUPABASE_URL } from '../constants';
 import { MediaAsset, MediaCollection } from '../types';
@@ -153,8 +154,6 @@ export const syncProductImagesToAssets = async (): Promise<number> => {
 
     // 4. Create new asset records for them
     const newAssets = urlsToSync.map(url => {
-        // FIX: The 'url' variable can be of type 'unknown' here due to type inference from Set<any>.
-        // Cast to string to safely use the .split() method.
         const pathSegments = String(url).split('/');
         const fileName = pathSegments.pop() || 'synced-image.jpg';
         return {
@@ -205,8 +204,7 @@ export const getCollectionDetails = async (collectionId: number): Promise<MediaA
         .order('created_at', { referencedTable: 'media_assets', ascending: false });
 
     if (error) throw new Error(error.message);
-    // The query returns objects like { media_assets: { ... } }, so we need to extract the inner object.
-    // FIX: The supabase query can return media_assets as an array of objects, so we use flatMap to flatten the result.
+    // The query returns objects like [{ media_assets: {...} }, { media_assets: [ ... ] }], so we need to extract and flatten.
     const assets = data.flatMap(item => item.media_assets).filter(Boolean);
     return assets as MediaAsset[];
 };

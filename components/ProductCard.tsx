@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';
@@ -30,7 +31,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
   // Carousel State
   const { gallery_images } = product;
   const hasGallery = gallery_images && gallery_images.length > 0;
-  const displayImages = hasGallery ? gallery_images! : [product.image_url];
+  const displayImages = hasGallery ? [product.image_url, ...gallery_images] : [product.image_url];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const hoverIntervalRef = useRef<number | null>(null);
 
@@ -178,7 +179,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
         {/* Badges */}
         <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
             {isLowStock && <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg border border-red-400 animate-pulse">Low Stock</span>}
-            {!isLowStock && !isOutOfStock && <span className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-800 dark:text-white border border-white/20 text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm">{product.category}</span>}
+            {(displayImages.length > 1) && (
+                <span className="bg-slate-900/50 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1.5">
+                    <i className="fas fa-images"></i> {displayImages.length}
+                </span>
+            )}
             {Number(product.price) > 100 && (
                <span className="bg-secondary/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg border border-secondary/50">BESTSELLER</span>
             )}
