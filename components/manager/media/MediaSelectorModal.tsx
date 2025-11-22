@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import BaseModal from '../../modals/BaseModal';
 import { useModal } from '../../../contexts/ModalContext';
@@ -48,11 +49,14 @@ const MediaSelectorModal: React.FC = () => {
     const handleConfirmSelection = () => {
         if (onSelect) {
             if (selectedAsset) {
-                onSelect({ imageUrl: selectedAsset.public_url });
+                // When a single asset is chosen, collectionId is null.
+                onSelect({ imageUrl: selectedAsset.public_url, collectionId: null });
             } else if (selectedCollection) {
+                // When a collection is chosen, its first image is the cover.
+                const coverImage = selectedCollection.media_assets?.[0]?.public_url || '';
                 onSelect({
-                    collectionId: selectedCollection.id,
-                    collectionImages: selectedCollection.media_assets?.map(m => m.public_url)
+                    imageUrl: coverImage,
+                    collectionId: selectedCollection.id
                 });
             }
         }
@@ -67,7 +71,7 @@ const MediaSelectorModal: React.FC = () => {
         try {
             const newAsset = await uploadMediaAsset(file, user?.id);
             if (onSelect) {
-                onSelect({ imageUrl: newAsset.public_url });
+                onSelect({ imageUrl: newAsset.public_url, collectionId: null });
                 closeModal();
             }
         } catch (error: any) {

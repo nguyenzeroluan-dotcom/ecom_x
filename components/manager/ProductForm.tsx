@@ -77,26 +77,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   const openMediaLibrary = () => {
       openModal(ModalType.MEDIA_SELECTOR, {
-          onSelect: (media: { imageUrl?: string, collectionId?: number, collectionImages?: string[] }) => {
-              setFormData(prev => {
-                  // A single image was selected. This sets the cover image and unsets any collection.
-                  if (media.imageUrl) {
-                      return {
-                          ...prev,
-                          image_url: media.imageUrl,
-                          collection_id: undefined,
-                      };
-                  }
-                  // A collection was selected. This sets the collection and updates the cover image.
-                  if (media.collectionId !== undefined && media.collectionId !== null) {
-                      return {
-                          ...prev,
-                          image_url: (media.collectionImages && media.collectionImages[0]) || '', // Use first image or clear it
-                          collection_id: media.collectionId,
-                      };
-                  }
-                  return prev;
-              });
+          onSelect: (media: { imageUrl: string; collectionId: number | null }) => {
+              setFormData(prev => ({
+                  ...prev,
+                  image_url: media.imageUrl,
+                  collection_id: media.collectionId === null ? undefined : media.collectionId,
+              }));
           }
       });
   };
