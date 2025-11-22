@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { ViewState } from '../types';
 import { createOrder } from '../services/orderService';
+import { addToLibrary } from '../services/libraryService';
 import { DATABASE_SETUP_SQL } from '../services/databaseService';
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_CHAT_MODEL } from '../constants';
@@ -96,7 +98,16 @@ const CheckoutView: React.FC<CheckoutViewProps> = ({ setView }) => {
         generatedNote
       );
 
-      // 3. Success
+      // 3. Add Digital Items to Library
+      if (user?.id) {
+          for (const item of items) {
+              if (item.is_digital) {
+                  await addToLibrary(user.id, item.id);
+              }
+          }
+      }
+
+      // 4. Success
       clearCart();
       setStep('success');
 
@@ -153,12 +164,18 @@ const CheckoutView: React.FC<CheckoutViewProps> = ({ setView }) => {
                   </div>
               )}
 
-              <div className="flex gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button 
+                      onClick={() => setView(ViewState.LIBRARY)}
+                      className="bg-purple-100 text-purple-700 px-6 py-3 rounded-xl font-bold hover:bg-purple-200 transition-all flex items-center justify-center gap-2"
+                  >
+                      <i className="fas fa-book-reader"></i> Open Library
+                  </button>
                   <button 
                       onClick={() => setView(ViewState.ORDERS)}
                       className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-50 transition-all"
                   >
-                      View Order History
+                      View Orders
                   </button>
                   <button 
                       onClick={() => setView(ViewState.HOME)}
@@ -294,6 +311,7 @@ const CheckoutView: React.FC<CheckoutViewProps> = ({ setView }) => {
                               <div className="flex-1">
                                   <h4 className="text-sm font-medium text-slate-900 line-clamp-2">{item.name}</h4>
                                   <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
+                                  {item.is_digital && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-md font-bold">E-Book</span>}
                                   <p className="text-sm font-bold text-slate-700">${(Number(item.price) * item.quantity).toFixed(2)}</p>
                               </div>
                           </div>

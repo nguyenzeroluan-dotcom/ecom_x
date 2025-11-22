@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewState, ModalType } from '../types';
 import { useCart } from '../contexts/CartContext';
@@ -34,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView, toggleCommandPale
   const navItems = [
     { id: ViewState.HOME, label: 'Market', icon: 'fa-store' },
     { id: 'AI_SUITE', label: 'AI Suite', icon: 'fa-sparkles', dropdown: aiSuiteItems },
+    { id: ViewState.LIBRARY, label: 'My Library', icon: 'fa-book-reader' },
     ...(isAdmin ? [{ id: ViewState.MANAGER, label: 'Manager', icon: 'fa-tasks' }] : []),
   ];
 
@@ -124,7 +124,6 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView, toggleCommandPale
                   return (
                     <button
                       key={item.id}
-                      // FIX: Cast item.id to ViewState to satisfy the setView function's type requirement.
                       onClick={() => setView(item.id as ViewState)}
                       data-nav-id={item.id}
                       className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center ${
@@ -219,6 +218,12 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView, toggleCommandPale
                                  <i className="fas fa-id-card mr-2 text-slate-400"></i> My Profile
                              </button>
                              <button 
+                                onClick={() => { setView(ViewState.LIBRARY); setShowUserMenu(false); }}
+                                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                             >
+                                 <i className="fas fa-book mr-2 text-slate-400"></i> My Library
+                             </button>
+                             <button 
                                 onClick={() => { setView(ViewState.ORDERS); setShowUserMenu(false); }}
                                 className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
                              >
@@ -254,15 +259,6 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView, toggleCommandPale
               <span className="text-[10px] font-medium">{item.label}</span>
             </button>
           ))}
-            <button
-              onClick={() => setView(ViewState.CHAT)}
-              className={`p-2 min-w-[60px] rounded-md flex flex-col items-center flex-shrink-0 ${
-                aiSuiteItems.some(i => i.id === currentView) ? 'text-primary dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'
-              }`}
-            >
-              <i className={`fas fa-sparkles text-lg mb-1`}></i>
-              <span className="text-[10px] font-medium">AI Suite</span>
-            </button>
       </div>
     </header>
   );

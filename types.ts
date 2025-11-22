@@ -13,6 +13,18 @@ export interface Product {
   reviews_count?: number;
   collection_id?: number;
   gallery_images?: string[];
+  // New E-Book fields
+  is_digital?: boolean; 
+  digital_content?: string; // For demo, we store text directly. Real app would use a URL to secure storage.
+}
+
+export interface LibraryItem {
+  id: number;
+  user_id: string;
+  product_id: number;
+  product: Product;
+  last_position: number; // Percentage 0-100
+  purchase_date: string;
 }
 
 export interface Category {
@@ -48,7 +60,9 @@ export enum ViewState {
   MANAGER = 'MANAGER',
   CHECKOUT = 'CHECKOUT',
   ORDERS = 'ORDERS',
-  PROFILE = 'PROFILE'
+  PROFILE = 'PROFILE',
+  LIBRARY = 'LIBRARY',
+  READER = 'READER'
 }
 
 export interface ChatMessage {

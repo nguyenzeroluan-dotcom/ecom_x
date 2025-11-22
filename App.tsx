@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from './layouts/MainLayout';
 import ChatBot from './components/ChatBot';
@@ -11,8 +10,9 @@ import MarketView from './views/MarketView';
 import CheckoutView from './views/CheckoutView';
 import OrdersView from './views/OrdersView';
 import UserProfileView from './views/UserProfileView';
+import LibraryView from './views/LibraryView';
 import AccessDeniedView from './views/AccessDeniedView';
-import { ViewState } from './types';
+import { ViewState, LibraryItem } from './types';
 import { ModalProvider } from './contexts/ModalContext';
 import ModalRoot from './components/modals/ModalRoot';
 import { CartProvider } from './contexts/CartContext';
@@ -27,11 +27,13 @@ import PromoBanner from './components/PromoBanner';
 import FloatingAIButton from './components/FloatingAIButton';
 import BackToTop from './components/common/BackToTop';
 import CommandPalette from './components/CommandPalette';
+import BookReader from './components/reader/BookReader';
 
 const AppContent: React.FC = () => {
   const [view, setView] = useState<ViewState>(ViewState.HOME);
   const { isAdmin } = useAuth();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [readingBook, setReadingBook] = useState<LibraryItem | null>(null);
 
   // Global key listener for Command Palette
   useEffect(() => {
@@ -50,6 +52,11 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [view]);
+
+  const handleOpenBook = (item: LibraryItem) => {
+      setReadingBook(item);
+      setView(ViewState.READER);
+  };
 
   const renderContent = () => {
     switch (view) {
@@ -71,6 +78,10 @@ const AppContent: React.FC = () => {
         return <OrdersView setView={setView} />;
       case ViewState.PROFILE:
         return <UserProfileView setView={setView} />;
+      case ViewState.LIBRARY:
+        return <LibraryView setView={setView} onReadBook={handleOpenBook} />;
+      case ViewState.READER:
+        return readingBook ? <BookReader bookItem={readingBook} onClose={() => setView(ViewState.LIBRARY)} /> : <LibraryView setView={setView} onReadBook={handleOpenBook} />;
       default:
         return null;
     }
@@ -82,23 +93,30 @@ const AppContent: React.FC = () => {
   };
   
   const isManagerView = view === ViewState.MANAGER;
+  const isReaderView = view === ViewState.READER;
 
   return (
     <MainLayout currentView={view} setView={setView} toggleCommandPalette={() => setIsCommandPaletteOpen(true)}>
-      <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setIsCommandPaletteOpen} onSelect={handlePaletteSelect} />
-      {!isManagerView && <PromoBanner />}
-      <div className="min-h-screen flex flex-col dark:bg-slate-900 transition-colors duration-300">
+      {!isReaderView && (
+          <>
+            <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setIsCommandPaletteOpen} onSelect={handlePaletteSelect} />
+            {!isManagerView && <PromoBanner />}
+          </>
+      )}
+      
+      <div className={`min-h-screen flex flex-col transition-colors duration-300 ${isReaderView ? 'bg-transparent' : 'dark:bg-slate-900'}`}>
         <div className="flex-grow">
           {renderContent()}
         </div>
-        {!isManagerView && <Footer setView={setView} />}
+        {!isManagerView && !isReaderView && <Footer setView={setView} />}
       </div>
+      
       <ModalRoot />
       <CartDrawer setView={setView} />
       <WishlistDrawer />
       <ToastContainer />
-      {!isManagerView && <FloatingAIButton setView={setView} currentView={view} />}
-      {!isManagerView && <BackToTop />}
+      {!isManagerView && !isReaderView && <FloatingAIButton setView={setView} currentView={view} />}
+      {!isManagerView && !isReaderView && <BackToTop />}
     </MainLayout>
   );
 };

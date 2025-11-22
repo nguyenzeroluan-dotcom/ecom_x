@@ -1,13 +1,73 @@
 
-
-import React from 'react';
+import React, { useState } from 'react';
 import { INITIAL_SETUP_SQL } from '../../data/01_initial_setup';
 import { USER_RBAC_SQL } from '../../data/02_user_rbac';
 import { ROLES_PERMISSIONS_SQL } from '../../data/03_roles_permissions';
 import { INVENTORY_ADVANCED_SQL } from '../../data/04_inventory_advanced';
 import { MEDIA_MANAGER_SQL } from '../../data/05_media_manager';
 import { MEDIA_COLLECTIONS_SQL } from '../../data/07_media_collections';
+import { EBOOKS_SETUP_SQL } from '../../data/08_ebooks_setup';
 import { useNotification } from '../../contexts/NotificationContext';
+
+interface ScriptItemProps {
+    script: {
+        title: string;
+        description: string;
+        sql: string;
+        color: string;
+        label: string;
+    };
+    onCopy: (text: string, label: string) => void;
+}
+
+const ScriptItem: React.FC<ScriptItemProps> = ({ script, onCopy }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800 shadow-sm transition-all duration-200 hover:shadow-md">
+            <div 
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0 ${script.color}`}>
+                        <i className="fas fa-database"></i>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-sm text-slate-800 dark:text-white">{script.title}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{script.description}</p>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onCopy(script.sql, script.label); }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-2"
+                        title="Copy to Clipboard"
+                    >
+                        <i className="fas fa-copy"></i> <span className="hidden sm:inline">Copy</span>
+                    </button>
+                    <div className={`w-8 h-8 flex items-center justify-center text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                        <i className="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            {isOpen && (
+                <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-900 animate-fade-in">
+                    <div className="flex justify-between items-center px-4 py-2 bg-black/20 border-b border-white/5">
+                        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">SQL Script Content</span>
+                    </div>
+                    <div className="p-4 overflow-x-auto max-h-[400px] custom-scrollbar">
+                        <pre className={`${script.color} text-xs font-mono whitespace-pre-wrap leading-relaxed`}>
+                            {script.sql}
+                        </pre>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const SqlViewer: React.FC = () => {
   const { addNotification } = useNotification();
@@ -48,7 +108,7 @@ const SqlViewer: React.FC = () => {
     },
     {
       title: '5. Media Library (Assets Schema)',
-      description: 'Required for central media management. Includes dimensions, tags, etc.',
+      description: 'Required for central media management.',
       sql: MEDIA_MANAGER_SQL,
       color: 'text-yellow-400',
       label: 'Media'
@@ -59,6 +119,13 @@ const SqlViewer: React.FC = () => {
       sql: MEDIA_COLLECTIONS_SQL,
       color: 'text-pink-400',
       label: 'Collections'
+    },
+    {
+      title: '7. E-Books & Library System',
+      description: 'Required for Digital Products and Reader functionality.',
+      sql: EBOOKS_SETUP_SQL,
+      color: 'text-cyan-400',
+      label: 'E-Books'
     }
   ];
 
@@ -72,32 +139,14 @@ const SqlViewer: React.FC = () => {
             <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Database Setup Center</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                    Use these scripts in the <a href="https://supabase.com/dashboard/project/_/sql" target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">Supabase SQL Editor</a> to initialize your database tables and security policies.
+                    Run these scripts in the <a href="https://supabase.com/dashboard/project/_/sql" target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">Supabase SQL Editor</a> to initialize your database.
                 </p>
             </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-8">
+        <div className="flex flex-col gap-4">
             {scripts.map(script => (
-                <div key={script.title} className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                    <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                        <div>
-                            <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{script.title}</h3>
-                            <p className="text-xs text-slate-500">{script.description}</p>
-                        </div>
-                        <button 
-                            onClick={() => handleCopy(script.sql, script.label)}
-                            className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
-                        >
-                            <i className="fas fa-copy"></i> Copy Script
-                        </button>
-                    </div>
-                    <div className="bg-slate-900 p-4 overflow-x-auto max-h-[200px] custom-scrollbar">
-                        <pre className={`${script.color} text-xs font-mono whitespace-pre-wrap leading-relaxed`}>
-                            {script.sql}
-                        </pre>
-                    </div>
-                </div>
+                <ScriptItem key={script.title} script={script} onCopy={handleCopy} />
             ))}
         </div>
       </div>

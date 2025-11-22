@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import BaseModal from '../../modals/BaseModal';
 import { useModal } from '../../../contexts/ModalContext';
@@ -79,14 +78,18 @@ const MediaSelectorModal: React.FC = () => {
             onSelect({ 
                 imageUrl: selectedAsset.public_url, 
                 collectionId: null,
-                imageCount: 0 
+                imageCount: 0,
+                previewImages: [] 
             });
         } else if (selectedCollection) {
             const coverImage = selectedCollection.media_assets?.[0]?.public_url || 'https://via.placeholder.com/400?text=Empty';
+            const previewImages = selectedCollection.media_assets?.map(a => a.public_url) || [];
+            
             onSelect({
                 imageUrl: coverImage,
                 collectionId: selectedCollection.id,
-                imageCount: selectedCollection.media_assets?.length || 0
+                imageCount: selectedCollection.media_assets?.length || 0,
+                previewImages: previewImages
             });
         }
         closeModal();
@@ -101,7 +104,12 @@ const MediaSelectorModal: React.FC = () => {
             const newAsset = await uploadMediaAsset(file, user?.id);
             if (onSelect) {
                 // This is a direct action: upload and immediately assign, then close.
-                onSelect({ imageUrl: newAsset.public_url, collectionId: null, imageCount: 0 });
+                onSelect({ 
+                    imageUrl: newAsset.public_url, 
+                    collectionId: null, 
+                    imageCount: 0,
+                    previewImages: []
+                });
                 addNotification('success', 'Image uploaded and set as cover.');
                 closeModal();
             }
