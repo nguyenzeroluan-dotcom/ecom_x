@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Product } from '../../types';
-import { deleteProducts } from '../../services/supabaseClient';
 
 interface ProductTableProps {
   products: Product[];
@@ -10,9 +9,10 @@ interface ProductTableProps {
   viewMode: 'table' | 'grid' | 'list';
   onEdit: (product: Product) => void;
   onDelete: (id: number | string) => void;
+  onBulkDelete: (ids: (string | number)[]) => void;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode, onEdit, onDelete }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode, onEdit, onDelete, onBulkDelete }) => {
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
 
   const toggleSelectAll = () => {
@@ -29,17 +29,10 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
       );
   };
 
-  const handleBulkDelete = async () => {
-      if (window.confirm(`Delete ${selectedIds.length} products?`)) {
-          try {
-              await deleteProducts(selectedIds);
-              setSelectedIds([]);
-              // In a real app, we'd call a refresh function passed via props here
-              // But for simplicity, we'll rely on the parent to refresh via subscription or manual reload
-              window.location.reload(); 
-          } catch (e: any) {
-              alert(e.message);
-          }
+  const handleBulkDelete = () => {
+      if (onBulkDelete) {
+        onBulkDelete(selectedIds);
+        setSelectedIds([]); // Clear selection after initiating action
       }
   };
 

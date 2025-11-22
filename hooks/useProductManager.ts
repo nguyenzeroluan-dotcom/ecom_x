@@ -5,7 +5,8 @@ import {
   getProducts, 
   addProduct, 
   updateProduct, 
-  deleteProduct, 
+  deleteProduct,
+  deleteProducts,
   seedProducts, 
   uploadProductImage,
   getCategories,
@@ -126,6 +127,24 @@ export const useProductManager = () => {
     });
   };
 
+  const handleDeleteProducts = (ids: (string | number)[]) => {
+    openModal(ModalType.CONFIRM, {
+      title: `Delete ${ids.length} Products`,
+      message: `Are you sure you want to delete these ${ids.length} selected products? This action cannot be undone.`,
+      isDestructive: true,
+      onConfirm: async () => {
+         try {
+            await deleteProducts(ids);
+            setProducts(prev => prev.filter(p => !ids.includes(p.id)));
+            openModal(ModalType.SUCCESS, { title: "Products Deleted", message: `${ids.length} products have been successfully removed.` });
+          } catch (err: any) {
+            setError("Failed to delete products: " + (err.message || "An unknown error occurred."));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+      }
+    });
+  };
+
   // --- Category Actions ---
 
   const handleAddCategory = async (category: Omit<Category, 'id'>) => {
@@ -231,28 +250,29 @@ export const useProductManager = () => {
     }
   };
 
+  const dismissError = () => setError(null);
+
   return {
-    state: {
-      products,
-      categories,
-      loading,
-      error,
-      setupRequired,
-      seeding,
-      uploading,
-      isAnalyzing
-    },
-    actions: {
-      handleSaveProduct,
-      handleDeleteProduct,
-      handleAddCategory,
-      handleUpdateCategory,
-      handleDeleteCategory,
-      handleSeedData,
-      handleImageUpload,
-      handleMagicAnalysis,
-      refreshData: fetchData, // Expose refresh
-      dismissError: () => setError(null)
-    }
+    // State
+    products,
+    categories,
+    loading,
+    error,
+    setupRequired,
+    seeding,
+    uploading,
+    isAnalyzing,
+    // Actions
+    refreshData: fetchData,
+    handleSaveProduct,
+    handleDeleteProduct,
+    handleDeleteProducts,
+    handleAddCategory,
+    handleUpdateCategory,
+    handleDeleteCategory,
+    handleSeedData,
+    handleImageUpload,
+    handleMagicAnalysis,
+    dismissError
   };
 };

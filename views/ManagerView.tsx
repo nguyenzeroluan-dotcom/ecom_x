@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useProductManager } from '../hooks/useProductManager';
 import ProductForm from '../components/manager/ProductForm';
@@ -21,11 +22,31 @@ const DEMO_DATA = [
 ];
 
 const ManagerView: React.FC = () => {
-  const { state, actions } = useProductManager();
+  const { 
+    products, 
+    categories, 
+    loading, 
+    error, 
+    setupRequired, 
+    seeding, 
+    isAnalyzing,
+    refreshData,
+    handleSaveProduct,
+    handleDeleteProduct,
+    handleDeleteProducts,
+    handleAddCategory,
+    handleUpdateCategory,
+    handleDeleteCategory,
+    handleSeedData,
+    handleImageUpload,
+    handleMagicAnalysis,
+    dismissError
+  } = useProductManager();
+  
   const [activeTab, setActiveTab] = useState<ManagerTab>('PRODUCTS');
   const [isEditing, setIsEditing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const { isAdmin } = useAuth(); // Check permission
+  const { isAdmin } = useAuth();
   
   // View States
   const [inventoryViewMode, setInventoryViewMode] = useState<'table' | 'grid' | 'list'>('table');
@@ -42,10 +63,10 @@ const ManagerView: React.FC = () => {
 
   // Derived Categories list for dropdowns (Merge DB categories and product categories)
   const uniqueCategories = useMemo(() => {
-      const cats = new Set(state.products.map(p => p.category || 'Uncategorized'));
-      state.categories.forEach(c => cats.add(c.name));
+      const cats = new Set(products.map(p => p.category || 'Uncategorized'));
+      categories.forEach(c => cats.add(c.name));
       return ['All', ...Array.from(cats).sort()];
-  }, [state.products, state.categories]);
+  }, [products, categories]);
 
   // Reset pagination to the first page whenever search or category filters change.
   useEffect(() => {
@@ -64,7 +85,7 @@ const ManagerView: React.FC = () => {
   };
 
   const handleSubmit = async (data: Omit<Product, 'id'>) => {
-    const success = await actions.handleSaveProduct(data, editingProduct?.id);
+    const success = await handleSaveProduct(data, editingProduct?.id);
     if (success) handleCancelEdit();
     return success;
   };
@@ -72,7 +93,7 @@ const ManagerView: React.FC = () => {
   const handleGenerateForecast = async () => {
       setIsForecasting(true);
       try {
-          const report = await forecastInventory(state.products);
+          const report = await forecastInventory(products);
           setForecastReport(report || "Analysis failed.");
       } catch (e) {
           console.error(e);
@@ -89,12 +110,12 @@ const ManagerView: React.FC = () => {
 
   // Filtering Logic
   const filteredProducts = useMemo(() => {
-      return state.products.filter(p => {
+      return products.filter(p => {
           const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.sku || '').toLowerCase().includes(search.toLowerCase());
           const matchCat = categoryFilter === 'All' || p.category === categoryFilter;
           return matchSearch && matchCat;
       });
-  }, [state.products, search, categoryFilter]);
+  }, [products, search, categoryFilter]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -131,15 +152,15 @@ const ManagerView: React.FC = () => {
               }
               return <RoleManager />;
           case 'INVENTORY':
-              return <InventoryManager products={state.products} onRefresh={actions.refreshData} />;
+              return <InventoryManager products={products} onRefresh={refreshData} />;
           case 'CATEGORIES':
               return <CategoryManager 
-                  products={state.products} 
-                  categories={state.categories}
+                  products={products} 
+                  categories={categories}
                   onSelectCategory={handleCategorySelect}
-                  onAddCategory={actions.handleAddCategory}
-                  onUpdateCategory={actions.handleUpdateCategory}
-                  onDeleteCategory={actions.handleDeleteCategory}
+                  onAddCategory={handleAddCategory}
+                  onUpdateCategory={handleUpdateCategory}
+                  onDeleteCategory={handleDeleteCategory}
               />;
           case 'FORECAST':
               return (
@@ -162,10 +183,10 @@ const ManagerView: React.FC = () => {
                            isEditing={isEditing}
                            onSubmit={handleSubmit}
                            onCancel={handleCancelEdit}
-                           isLoading={state.loading}
-                           isAnalyzing={state.isAnalyzing}
-                           onUpload={actions.handleImageUpload}
-                           onMagicAnalysis={actions.handleMagicAnalysis}
+                           isLoading={loading}
+                           isAnalyzing={isAnalyzing}
+                           onUpload={handleImageUpload}
+                           onMagicAnalysis={handleMagicAnalysis}
                            availableCategories={uniqueCategories.filter(c => c !== 'All')}
                        />
                     </div>
@@ -200,10 +221,11 @@ const ManagerView: React.FC = () => {
 
                        <ProductTable
                            products={paginatedProducts}
-                           loading={state.loading}
+                           loading={loading}
                            viewMode={inventoryViewMode}
                            onEdit={handleEdit}
-                           onDelete={actions.handleDeleteProduct}
+                           onDelete={handleDeleteProduct}
+                           onBulkDelete={handleDeleteProducts}
                        />
 
                        {/* Pagination Controls */}
@@ -241,26 +263,26 @@ const ManagerView: React.FC = () => {
             <p className="text-slate-500">Real-time inventory and user management</p>
         </div>
         <button
-            onClick={() => actions.handleSeedData(DEMO_DATA)}
-            disabled={state.seeding}
+            onClick={() => handleSeedData(DEMO_DATA)}
+            disabled={seeding}
             className="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-xl font-medium transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
            >
-             {state.seeding ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-database mr-2"></i>}
-             {state.seeding ? "Adding Data..." : "Generate Demo Data"}
+             {seeding ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-database mr-2"></i>}
+             {seeding ? "Adding Data..." : "Generate Demo Data"}
            </button>
       </div>
 
       {/* Error & Setup Guide */}
-      {state.error && (
+      {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm animate-fade-in">
            <div className="flex items-center">
              <i className="fas fa-exclamation-circle text-red-500 mr-3"></i>
              <div>
                 <h4 className="font-bold text-red-800 dark:text-red-300">Error</h4>
-                <p className="text-sm text-red-700 dark:text-red-400">{state.error}</p>
-                {state.setupRequired && <p className="text-sm text-red-700 dark:text-red-400 mt-1">Please go to the 'SQL Setup' tab to resolve.</p>}
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                {setupRequired && <p className="text-sm text-red-700 dark:text-red-400 mt-1">Please go to the 'SQL Setup' tab to resolve.</p>}
              </div>
-             <button onClick={actions.dismissError} className="ml-auto text-red-500"><i className="fas fa-times"></i></button>
+             <button onClick={dismissError} className="ml-auto text-red-500"><i className="fas fa-times"></i></button>
            </div>
         </div>
       )}
