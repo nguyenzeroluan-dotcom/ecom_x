@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect } from 'react';
 import { Product, ModalType } from '../../types';
 import { useModal } from '../../contexts/ModalContext';
@@ -36,7 +35,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
     category: '',
     description: '',
     image_url: '',
-    stock: '10'
+    stock: '10',
+    collection_id: undefined as number | undefined
   });
 
   const [isCustomCategory, setIsCustomCategory] = useState(false);
@@ -51,10 +51,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
         category: initialData.category || 'Uncategorized',
         description: initialData.description,
         image_url: initialData.image_url,
-        stock: initialData.stock !== undefined ? initialData.stock.toString() : '10'
+        stock: initialData.stock !== undefined ? initialData.stock.toString() : '10',
+        collection_id: initialData.collection_id
       });
     } else {
-      setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20' });
+      setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20', collection_id: undefined });
     }
   }, [initialData, categories]);
 
@@ -76,8 +77,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   const openMediaLibrary = () => {
       openModal(ModalType.MEDIA_SELECTOR, {
-          onSelect: (url: string) => {
-              setFormData(prev => ({ ...prev, image_url: url }));
+          onSelect: (media: { imageUrl?: string, collectionId?: number, collectionImages?: string[] }) => {
+              setFormData(prev => ({
+                ...prev,
+                // If a collection is chosen, its first image becomes the main image unless a specific image was also picked.
+                image_url: media.imageUrl || (media.collectionImages && media.collectionImages[0]) || prev.image_url,
+                collection_id: media.collectionId ?? prev.collection_id
+              }));
           }
       });
   };
@@ -93,7 +99,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
           category: data.category || categories[0],
           description: data.description || '',
           image_url: data.image_url || '',
-          stock: '20'
+          stock: '20',
+          collection_id: undefined
         });
         setTimeout(() => generateSku(), 100);
       }
@@ -110,10 +117,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
       description: formData.description,
       image_url: formData.image_url || 'https://via.placeholder.com/400',
       category: formData.category,
-      stock: parseInt(formData.stock) || 0
+      stock: parseInt(formData.stock) || 0,
+      collection_id: formData.collection_id
     });
     if (success && !isEditing) {
-      setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20' });
+      setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20', collection_id: undefined });
       setIsCustomCategory(false);
     }
   };
@@ -223,8 +231,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product Image</label>
-            <div className="flex gap-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product Media</label>
+            <div className="flex gap-4 items-center">
                <div className="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center">
                  {formData.image_url ? (
                    <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
@@ -232,9 +240,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
                    <i className="fas fa-image text-2xl text-slate-300"></i>
                  )}
                </div>
-               <div className="flex flex-col justify-center">
-                  <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 dark:text-slate-300 font-bold">Select Image</button>
-                  <p className="text-xs text-slate-400 mt-2">Choose from library or upload new.</p>
+               <div className="flex flex-col">
+                  <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 dark:text-slate-300 font-bold">
+                    {formData.collection_id ? 'Change Media' : 'Set Media'}
+                  </button>
+                  <p className="text-xs text-slate-400 mt-2">
+                    {formData.collection_id ? `Collection #${formData.collection_id} assigned` : 'Set cover image & gallery.'}
+                  </p>
                </div>
             </div>
           </div>

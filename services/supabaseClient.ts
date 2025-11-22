@@ -1,18 +1,20 @@
 
 
+
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../constants';
-import { Product, Order, CartItem, UserProfile, Category, AppRole, InventoryLog, MediaAsset } from '../types';
+import { Product, Order, CartItem, UserProfile, Category, AppRole, InventoryLog, MediaAsset, MediaCollection } from '../types';
 import { INITIAL_SETUP_SQL } from '../data/01_initial_setup';
 import { USER_RBAC_SQL } from '../data/02_user_rbac';
 import { ROLES_PERMISSIONS_SQL } from '../data/03_roles_permissions';
 import { INVENTORY_ADVANCED_SQL } from '../data/04_inventory_advanced';
 import { MEDIA_MANAGER_SQL } from '../data/05_media_manager';
+import { MEDIA_COLLECTIONS_SQL } from '../data/07_media_collections';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Combined SQL for Database Setup
-export const DATABASE_SETUP_SQL = INITIAL_SETUP_SQL + '\n\n' + USER_RBAC_SQL + '\n\n' + ROLES_PERMISSIONS_SQL + '\n\n' + INVENTORY_ADVANCED_SQL + '\n\n' + MEDIA_MANAGER_SQL;
+export const DATABASE_SETUP_SQL = INITIAL_SETUP_SQL + '\n\n' + USER_RBAC_SQL + '\n\n' + ROLES_PERMISSIONS_SQL + '\n\n' + INVENTORY_ADVANCED_SQL + '\n\n' + MEDIA_MANAGER_SQL + '\n\n' + MEDIA_COLLECTIONS_SQL;
 
 // --- Helper Functions ---
 const getImageDimensions = (file: File): Promise<{ width: number, height: number }> => {
@@ -37,30 +39,61 @@ const getImageDimensions = (file: File): Promise<{ width: number, height: number
 // --- Product Services ---
 
 export const getProducts = async (): Promise<Product[]> => {
-  try {
-    const { data, error } = await supabase
+  // 1. Attempt to fetch from the optimized view which includes gallery images.
+  const { data: viewData, error: viewError } = await supabase
+    .from('products_with_gallery')
+    .select('*')
+    .order('id', { ascending: false });
+  
+  // 2. If the view query is successful, process and return the data.
+  if (!viewError && viewData) {
+    const products = viewData.map(p => ({
+      ...p,
+      gallery_images: p.gallery_images || [] // Ensure gallery_images is always an array.
+    }));
+    return products as Product[];
+  }
+
+  // 3. If the view doesn't exist (e.g., migration not run), fall back to the base products table.
+  if (viewError && viewError.code === '42P01') { // 42P01: undefined_table
+    console.warn("View 'products_with_gallery' not found. Falling back to 'products' table. Run SQL setup for gallery features.");
+    
+    const { data: tableData, error: tableError } = await supabase
       .from('products')
       .select('*')
       .order('id', { ascending: false });
-
-    if (error) {
-      if (error.code === '42P01') { // undefined_table
-         console.warn("Table 'products' not found.");
-         throw new Error("Table 'products' does not exist. Please run the SQL setup.");
-      }
-      throw new Error(error.message);
+      
+    if (tableError) {
+      // If even the base table fails, then it's a legitimate error to throw.
+       if (tableError.code === '42P01') {
+         throw new Error("Database setup is incomplete. Table 'products' does not exist. Please run the initial SQL setup.");
+       }
+      throw new Error(`Fallback to 'products' table failed: ${tableError.message}`);
     }
 
-    if (!data) {
+    if (!tableData) {
       return [];
     }
 
-    return data as Product[];
-  } catch (e: any) {
-    console.error("Unexpected error fetching products:", e);
-    throw e;
+    // Manually add the gallery_images property to maintain a consistent Product shape.
+    const products = tableData.map(p => ({
+      ...p,
+      gallery_images: []
+    }));
+    
+    return products as Product[];
   }
+
+  // 4. Handle other unexpected errors from the initial view query.
+  if (viewError) {
+    console.error("Error fetching from 'products_with_gallery':", viewError);
+    throw new Error(viewError.message);
+  }
+
+  // 5. Return an empty array as a final safeguard.
+  return [];
 };
+
 
 export const addProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
   const { data, error } = await supabase
@@ -377,6 +410,70 @@ export const syncProductImagesToAssets = async (): Promise<number> => {
     if (insertError) throw new Error(insertError.message);
 
     return newAssets.length;
+};
+
+// --- Media Collection Services (NEW) ---
+
+export const getMediaCollections = async (): Promise<MediaCollection[]> => {
+    const { data, error } = await supabase
+        .from('media_collections')
+        .select(`
+            id, name, description,
+            media_assets:collection_media_join(media_assets(public_url))
+        `)
+        .order('name', { ascending: true });
+
+    if (error) {
+        if (error.code === '42P01') return []; // Table doesn't exist
+        throw new Error(error.message);
+    }
+
+    // Transform data to match MediaCollection type
+    const collections = data.map(c => ({
+      ...c,
+      media_assets: c.media_assets.map((m: any) => m.media_assets)
+    }));
+
+    return collections as MediaCollection[];
+};
+
+export const createMediaCollection = async (collection: Omit<MediaCollection, 'id' | 'media_assets'>): Promise<MediaCollection> => {
+    const { data, error } = await supabase
+        .from('media_collections')
+        .insert([collection])
+        .select()
+        .single();
+    if (error) throw new Error(error.message);
+    return data as MediaCollection;
+};
+
+export const updateMediaCollection = async (id: number, updates: Partial<Omit<MediaCollection, 'id'>>): Promise<MediaCollection> => {
+    const { data, error } = await supabase
+        .from('media_collections')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+    if (error) throw new Error(error.message);
+    return data as MediaCollection;
+};
+
+export const deleteMediaCollection = async (id: number): Promise<void> => {
+    // RLS and "on delete cascade" on the join table handle cleanup.
+    const { error } = await supabase
+        .from('media_collections')
+        .delete()
+        .eq('id', id);
+    if (error) throw new Error(error.message);
+};
+
+export const addAssetsToCollection = async (collectionId: number, mediaIds: number[]): Promise<void> => {
+    const records = mediaIds.map(media_id => ({ collection_id: collectionId, media_id }));
+    // FIX: The `.insert()` method does not support an `onConflict` option. Using `.upsert()` with `ignoreDuplicates: true` is the correct Supabase v2 syntax for inserting records and ignoring any duplicates based on the primary key constraint.
+    const { error } = await supabase
+        .from('collection_media_join')
+        .upsert(records, { onConflict: 'collection_id, media_id', ignoreDuplicates: true }); // Ignore duplicates
+    if (error) throw new Error(error.message);
 };
 
 

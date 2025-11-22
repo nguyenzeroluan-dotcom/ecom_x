@@ -8,9 +8,11 @@ export interface Product {
   image_url: string;
   category?: string;
   stock?: number;
-  sku?: string; // New: Stock Keeping Unit
+  sku?: string;
   rating?: number;
   reviews_count?: number;
+  collection_id?: number;
+  gallery_images?: string[];
 }
 
 export interface Category {
@@ -74,7 +76,10 @@ export enum ModalType {
   SUCCESS = 'SUCCESS',
   COMPARISON = 'COMPARISON',
   AUTH = 'AUTH',
-  MEDIA_SELECTOR = 'MEDIA_SELECTOR'
+  MEDIA_SELECTOR = 'MEDIA_SELECTOR',
+  MEDIA_DETAIL = 'MEDIA_DETAIL',
+  COLLECTION_MANAGER = 'COLLECTION_MANAGER',
+  COLLECTION_EDIT = 'COLLECTION_EDIT'
 }
 
 export interface ModalContextType {
@@ -242,4 +247,13 @@ export interface MediaAsset {
     height?: number;
     tags?: string[];
     updated_at?: string;
+}
+
+export interface MediaCollection {
+  id: number;
+  name: string;
+  description?: string;
+  created_at?: string;
+  // This helps show thumbnails in the selector
+  media_assets?: { public_url: string }[];
 }

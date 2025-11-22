@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import BaseModal from '../../modals/BaseModal';
 import { useModal } from '../../../contexts/ModalContext';
-import { getMediaAssets, uploadMediaAsset } from '../../../services/supabaseClient';
-import { MediaAsset } from '../../../types';
+import { getMediaAssets, uploadMediaAsset, getMediaCollections } from '../../../services/supabaseClient';
+import { MediaAsset, MediaCollection } from '../../../types';
 import { useAuth } from '../../../contexts/AuthContext';
 import MediaCard from './MediaCard';
 
@@ -14,31 +14,46 @@ const MediaSelectorModal: React.FC = () => {
 
     const { user } = useAuth();
     const [assets, setAssets] = useState<MediaAsset[]>([]);
+    const [collections, setCollections] = useState<MediaCollection[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedAsset, setSelectedAsset] = useState<MediaAsset | null>(null);
-    const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
+    const [selectedCollection, setSelectedCollection] = useState<MediaCollection | null>(null);
+    const [activeTab, setActiveTab] = useState<'library' | 'collections' | 'upload'>('library');
 
-    const fetchAssets = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getMediaAssets();
-            setAssets(data);
+            if (activeTab === 'library') {
+                const data = await getMediaAssets();
+                setAssets(data);
+            } else if (activeTab === 'collections') {
+                const data = await getMediaCollections();
+                setCollections(data);
+            }
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [activeTab]);
 
     useEffect(() => {
-        if (isOpen && activeTab === 'library') {
-            fetchAssets();
+        if (isOpen) {
+            fetchData();
+        } else {
+            // Reset state on close
+            setSelectedAsset(null);
+            setSelectedCollection(null);
         }
-    }, [isOpen, activeTab, fetchAssets]);
+    }, [isOpen, fetchData]);
 
-    const handleSelectAndClose = () => {
-        if (selectedAsset && onSelect) {
-            onSelect(selectedAsset.public_url);
-            closeModal();
+    const handleConfirmSelection = () => {
+        if (onSelect) {
+            onSelect({
+                imageUrl: selectedAsset?.public_url,
+                collectionId: selectedCollection?.id,
+                collectionImages: selectedCollection?.media_assets?.map(m => m.public_url)
+            });
         }
+        closeModal();
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,8 +64,7 @@ const MediaSelectorModal: React.FC = () => {
         try {
             const newAsset = await uploadMediaAsset(file, user?.id);
             if (onSelect) {
-                // Auto-select and close after successful upload
-                onSelect(newAsset.public_url);
+                onSelect({ imageUrl: newAsset.public_url });
                 closeModal();
             }
         } catch (error: any) {
@@ -61,11 +75,12 @@ const MediaSelectorModal: React.FC = () => {
     };
     
     return (
-        <BaseModal isOpen={isOpen} onClose={closeModal} size="xl" title="Select Media">
+        <BaseModal isOpen={isOpen} onClose={closeModal} size="xl" title="Set Product Media">
             <div className="flex flex-col h-[70vh]">
                 <div className="border-b border-slate-200 dark:border-slate-700 mb-4">
                     <div className="flex gap-4">
-                        <button onClick={() => setActiveTab('library')} className={`px-3 pb-2 font-bold text-sm ${activeTab === 'library' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Library</button>
+                        <button onClick={() => setActiveTab('library')} className={`px-3 pb-2 font-bold text-sm ${activeTab === 'library' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Set Cover Image</button>
+                        <button onClick={() => setActiveTab('collections')} className={`px-3 pb-2 font-bold text-sm ${activeTab === 'collections' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Assign Gallery</button>
                         <button onClick={() => setActiveTab('upload')} className={`px-3 pb-2 font-bold text-sm ${activeTab === 'upload' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Upload New</button>
                     </div>
                 </div>
@@ -80,11 +95,34 @@ const MediaSelectorModal: React.FC = () => {
                                     asset={asset}
                                     isSelected={selectedAsset?.id === asset.id}
                                     onSelect={() => setSelectedAsset(asset)}
-                                    onDoubleClick={handleSelectAndClose}
                                     isSelectMode
                                 />
                             ))}
                         </div>
+                    )}
+                    {activeTab === 'collections' && (
+                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {loading && [...Array(8)].map((_, i) => <div key={i} className="aspect-square bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>)}
+                            {!loading && collections.map(collection => (
+                                <div
+                                    key={collection.id}
+                                    onClick={() => setSelectedCollection(collection)}
+                                    className={`relative aspect-square rounded-xl overflow-hidden group border-2 transition-all duration-200 cursor-pointer
+                                        ${selectedCollection?.id === collection.id ? 'border-primary shadow-lg' : 'border-transparent hover:border-slate-300 dark:hover:border-slate-600'}`}
+                                >
+                                    <img src={collection.media_assets?.[0]?.public_url || 'https://via.placeholder.com/200'} alt={collection.name} className="w-full h-full object-cover bg-slate-100 dark:bg-slate-700" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-3 text-white">
+                                        <h4 className="font-bold text-sm truncate">{collection.name}</h4>
+                                        <p className="text-xs opacity-80">{collection.media_assets?.length || 0} items</p>
+                                    </div>
+                                     {selectedCollection?.id === collection.id && (
+                                        <div className="absolute inset-0 bg-primary/40 flex items-center justify-center">
+                                            <i className="fas fa-check-circle text-white text-4xl"></i>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                         </div>
                     )}
                     {activeTab === 'upload' && (
                         <div className="h-full flex items-center justify-center p-4">
@@ -99,7 +137,7 @@ const MediaSelectorModal: React.FC = () => {
                                         <>
                                             <i className="fas fa-cloud-upload-alt text-4xl text-slate-400 mb-3"></i>
                                             <p className="mb-2 text-sm text-slate-500 dark:text-slate-400"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Your file will be used immediately.</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Your file will be used immediately as cover image.</p>
                                         </>
                                     )}
                                 </div>
@@ -109,14 +147,19 @@ const MediaSelectorModal: React.FC = () => {
                     )}
                 </div>
 
-                {activeTab === 'library' && (
-                    <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div className="text-xs text-slate-500">
+                        {selectedAsset && `Cover: ${selectedAsset.file_name}`}
+                        {selectedAsset && selectedCollection && ' | '}
+                        {selectedCollection && `Gallery: ${selectedCollection.name}`}
+                    </div>
+                    <div className="flex gap-3">
                         <button onClick={closeModal} className="px-4 py-2 rounded-lg font-bold text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
-                        <button onClick={handleSelectAndClose} disabled={!selectedAsset} className="px-6 py-2 rounded-lg font-bold text-sm text-white bg-primary hover:bg-indigo-600 shadow-lg disabled:opacity-50">
-                            Select Image
+                        <button onClick={handleConfirmSelection} disabled={!selectedAsset && !selectedCollection} className="px-6 py-2 rounded-lg font-bold text-sm text-white bg-primary hover:bg-indigo-600 shadow-lg disabled:opacity-50">
+                            Confirm Selection
                         </button>
                     </div>
-                )}
+                </div>
             </div>
         </BaseModal>
     );

@@ -1,5 +1,6 @@
 
-import React from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Product, ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';
 import { useCart } from '../contexts/CartContext';
@@ -23,9 +24,39 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
   const isOutOfStock = stock === 0;
   const isWishlisted = wishlist.includes(product.id);
 
-  // Mock rating if not exists
   const rating = product.rating || 4.5;
   const reviews = product.reviews_count || Math.floor(Math.random() * 50) + 5;
+  
+  // Carousel State
+  const { gallery_images } = product;
+  const hasGallery = gallery_images && gallery_images.length > 0;
+  const displayImages = hasGallery ? gallery_images! : [product.image_url];
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const hoverIntervalRef = useRef<number | null>(null);
+
+  const startImageCycle = () => {
+      if (!hasGallery || displayImages.length <= 1) return;
+      hoverIntervalRef.current = window.setInterval(() => {
+          setCurrentImageIndex(prev => (prev + 1) % displayImages.length);
+      }, 1200);
+  };
+
+  const stopImageCycle = () => {
+      if (hoverIntervalRef.current) {
+          clearInterval(hoverIntervalRef.current);
+          hoverIntervalRef.current = null;
+      }
+      setCurrentImageIndex(0);
+  };
+  
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverIntervalRef.current) {
+        clearInterval(hoverIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,7 +85,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
   };
 
 
-  // Base delay for staggered animation
   const animationDelay = `${index * 50}ms`;
 
   if (layout === 'list') {
@@ -65,7 +95,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
       >
         <div className="w-48 relative overflow-hidden cursor-pointer" onClick={handleQuickView}>
             <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
-            {/* Shine Effect */}
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none z-10"></div>
             {isOutOfStock && <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center text-white font-bold tracking-wider">SOLD OUT</div>}
         </div>
@@ -108,22 +137,32 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
     <div 
       className={`group bg-white dark:bg-slate-800 rounded-2xl shadow-soft hover:shadow-glow hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-slate-100 dark:border-slate-700/50 flex flex-col h-full opacity-0 animate-fade-in-up ${isOutOfStock ? 'opacity-75' : ''}`}
       style={{ animationDelay }}
+      onMouseEnter={startImageCycle}
+      onMouseLeave={stopImageCycle}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-slate-100 dark:bg-slate-700 cursor-pointer rounded-t-2xl" onClick={handleQuickView}>
-        <img 
-          src={product.image_url} 
-          alt={product.name}
-          loading="lazy"
-          className={`w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out ${isOutOfStock ? 'grayscale' : ''}`}
-        />
+        {displayImages.map((img, idx) => (
+             <img 
+                key={idx}
+                src={img} 
+                alt={product.name}
+                loading="lazy"
+                className={`absolute inset-0 w-full h-full object-cover transform transition-opacity duration-700 ease-out ${isOutOfStock ? 'grayscale' : ''} ${currentImageIndex === idx ? 'opacity-100' : 'opacity-0'}`}
+             />
+        ))}
         
-        {/* Shine Effect */}
+        {hasGallery && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                {displayImages.map((_, idx) => (
+                    <div key={idx} className={`h-1.5 rounded-full transition-all duration-500 ${currentImageIndex === idx ? 'w-4 bg-white/90' : 'w-1.5 bg-white/50'}`}></div>
+                ))}
+            </div>
+        )}
+        
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 z-10 pointer-events-none"></div>
 
-        {/* Overlay Actions */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-gradient-to-t from-black/60 to-transparent transition-all duration-300 z-10"></div>
 
-        {/* Glassmorphic Action Buttons */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
              <button onClick={handleQuickView} className="w-10 h-10 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 text-slate-800 dark:text-white rounded-xl shadow-lg border border-white/20 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all duration-200" title="Quick View">
                  <i className="fas fa-eye"></i>
@@ -140,7 +179,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
         <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
             {isLowStock && <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg border border-red-400 animate-pulse">Low Stock</span>}
             {!isLowStock && !isOutOfStock && <span className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-800 dark:text-white border border-white/20 text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm">{product.category}</span>}
-            {/* Discount Badge Mockup */}
             {Number(product.price) > 100 && (
                <span className="bg-secondary/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg border border-secondary/50">BESTSELLER</span>
             )}
@@ -154,7 +192,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
              </div>
         )}
 
-        {/* Add to Cart Button Slide Up */}
         <div className="absolute inset-x-4 bottom-4 z-20 transform translate-y-[120%] group-hover:translate-y-0 transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1)">
             <button 
                 onClick={handleAddToCart}

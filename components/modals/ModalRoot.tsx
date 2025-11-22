@@ -9,6 +9,9 @@ import SuccessModal from './SuccessModal';
 import ComparisonModal from './ComparisonModal';
 import AuthModal from './AuthModal';
 import MediaSelectorModal from '../manager/media/MediaSelectorModal';
+import MediaDetailModal from '../manager/media/MediaDetailModal';
+import CollectionManagerModal from '../manager/media/CollectionManagerModal';
+import CollectionEditModal from '../manager/media/CollectionEditModal';
 
 const ModalRoot: React.FC = () => {
   const { isOpen, modalType } = useModal();
@@ -28,6 +31,12 @@ const ModalRoot: React.FC = () => {
       return <AuthModal />;
     case ModalType.MEDIA_SELECTOR:
       return <MediaSelectorModal />;
+    case ModalType.MEDIA_DETAIL:
+      return <MediaDetailModal />;
+    case ModalType.COLLECTION_MANAGER:
+      return <CollectionManagerModal />;
+    case ModalType.COLLECTION_EDIT:
+        return <CollectionEditModal />;
     default:
       return null;
   }

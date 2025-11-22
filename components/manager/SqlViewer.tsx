@@ -6,6 +6,7 @@ import { USER_RBAC_SQL } from '../../data/02_user_rbac';
 import { ROLES_PERMISSIONS_SQL } from '../../data/03_roles_permissions';
 import { INVENTORY_ADVANCED_SQL } from '../../data/04_inventory_advanced';
 import { MEDIA_MANAGER_SQL } from '../../data/05_media_manager';
+import { MEDIA_COLLECTIONS_SQL } from '../../data/07_media_collections';
 import { useNotification } from '../../contexts/NotificationContext';
 
 const SqlViewer: React.FC = () => {
@@ -46,11 +47,18 @@ const SqlViewer: React.FC = () => {
       label: 'Inventory'
     },
     {
-      title: '5. Media Library (v2 Schema)',
+      title: '5. Media Library (Assets Schema)',
       description: 'Required for central media management. Includes dimensions, tags, etc.',
       sql: MEDIA_MANAGER_SQL,
       color: 'text-yellow-400',
       label: 'Media'
+    },
+    {
+      title: '6. Media Collections (Galleries)',
+      description: 'Required for product image galleries.',
+      sql: MEDIA_COLLECTIONS_SQL,
+      color: 'text-pink-400',
+      label: 'Collections'
     }
   ];
 
