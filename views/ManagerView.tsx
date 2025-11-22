@@ -15,6 +15,9 @@ import { useAuth } from '../contexts/AuthContext';
 const DEMO_DATA = [
   { name: "Ultra-Slim 4K Monitor", price: 349.99, category: "Electronics", description: "27-inch display with HDR support.", image_url: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=400&q=80", stock: 12 },
   { name: "Vintage Leather Satchel", price: 129.50, category: "Fashion", description: "Handcrafted genuine leather bag.", image_url: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80", stock: 5 },
+  { name: "Smart Home Hub", price: 89.99, category: "Electronics", description: "Control your home with voice.", image_url: "https://images.unsplash.com/photo-1558002038-109177381793?auto=format&fit=crop&w=400&q=80", stock: 25 },
+  { name: "Abstract Canvas Print", price: 59.00, category: "Art", description: "Modern art piece, 24x36 inches.", image_url: "https://images.unsplash.com/photo-1549887534-1541e9326642?auto=format&fit=crop&w=400&q=80", stock: 8 },
+  { name: "Ergonomic Mesh Chair", price: 249.00, category: "Office", description: "High-back chair with lumbar support.", image_url: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&w=400&q=80", stock: 3 },
 ];
 
 const ManagerView: React.FC = () => {
@@ -87,7 +90,7 @@ const ManagerView: React.FC = () => {
   // Filtering Logic
   const filteredProducts = useMemo(() => {
       return state.products.filter(p => {
-          const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+          const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.sku || '').toLowerCase().includes(search.toLowerCase());
           const matchCat = categoryFilter === 'All' || p.category === categoryFilter;
           return matchSearch && matchCat;
       });
@@ -232,15 +235,33 @@ const ManagerView: React.FC = () => {
     <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
       
       {/* Dashboard Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
-        <p className="text-slate-500">Real-time inventory and user management</p>
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start gap-4">
+        <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+            <p className="text-slate-500">Real-time inventory and user management</p>
+        </div>
+        <button
+            onClick={() => actions.handleSeedData(DEMO_DATA)}
+            disabled={state.seeding}
+            className="px-4 py-2 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-xl font-medium transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+           >
+             {state.seeding ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-database mr-2"></i>}
+             {state.seeding ? "Adding Data..." : "Generate Demo Data"}
+           </button>
       </div>
 
       {/* Error & Setup Guide */}
-      {state.error && (!state.products || state.products.length === 0) && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm animate-fade-in">
-          {/* ... error display logic ... */}
+      {state.error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm animate-fade-in">
+           <div className="flex items-center">
+             <i className="fas fa-exclamation-circle text-red-500 mr-3"></i>
+             <div>
+                <h4 className="font-bold text-red-800 dark:text-red-300">Error</h4>
+                <p className="text-sm text-red-700 dark:text-red-400">{state.error}</p>
+                {state.setupRequired && <p className="text-sm text-red-700 dark:text-red-400 mt-1">Please go to the 'SQL Setup' tab to resolve.</p>}
+             </div>
+             <button onClick={actions.dismissError} className="ml-auto text-red-500"><i className="fas fa-times"></i></button>
+           </div>
         </div>
       )}
       

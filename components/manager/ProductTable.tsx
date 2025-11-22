@@ -1,6 +1,5 @@
 
 
-
 import React, { useState } from 'react';
 import { Product } from '../../types';
 import { deleteProducts } from '../../services/supabaseClient';
