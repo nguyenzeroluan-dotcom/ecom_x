@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useProductManager } from '../hooks/useProductManager';
 import { ManagerTab, UserProfile } from '../types';
@@ -62,6 +63,7 @@ const ManagerView: React.FC = () => {
   
     const [activeTab, setActiveTab] = useState<ManagerTab>('DASHBOARD');
     const [productCategoryFilter, setProductCategoryFilter] = useState('All');
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const { user, signOut, isAdmin } = useAuth();
   
     const uniqueCategories = useMemo(() => {
@@ -117,8 +119,10 @@ const ManagerView: React.FC = () => {
                     user={user as UserProfile}
                     signOut={signOut}
                     isAdmin={isAdmin}
+                    isCollapsed={isSidebarCollapsed}
+                    setIsCollapsed={setIsSidebarCollapsed}
                 />
-                <main className="flex-1 lg:ml-64">
+                <main className={`flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
                     <div className="py-8 px-4 sm:px-6 lg:px-8">
                         <ManagerHeader 
                             title={currentTabInfo.label}

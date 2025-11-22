@@ -80,23 +80,25 @@ const AppContent: React.FC = () => {
     setView(selectedView);
     setIsCommandPaletteOpen(false);
   };
+  
+  const isManagerView = view === ViewState.MANAGER;
 
   return (
     <MainLayout currentView={view} setView={setView} toggleCommandPalette={() => setIsCommandPaletteOpen(true)}>
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setIsCommandPaletteOpen} onSelect={handlePaletteSelect} />
-      <PromoBanner />
+      {!isManagerView && <PromoBanner />}
       <div className="min-h-screen flex flex-col dark:bg-slate-900 transition-colors duration-300">
         <div className="flex-grow">
           {renderContent()}
         </div>
-        {view !== ViewState.MANAGER && <Footer setView={setView} />}
+        {!isManagerView && <Footer setView={setView} />}
       </div>
       <ModalRoot />
       <CartDrawer setView={setView} />
       <WishlistDrawer />
       <ToastContainer />
-      <FloatingAIButton setView={setView} currentView={view} />
-      <BackToTop />
+      {!isManagerView && <FloatingAIButton setView={setView} currentView={view} />}
+      {!isManagerView && <BackToTop />}
     </MainLayout>
   );
 };
