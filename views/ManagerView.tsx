@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useProductManager } from '../hooks/useProductManager';
 import ProductForm from '../components/manager/ProductForm';
 import ProductTable from '../components/manager/ProductTable';
@@ -44,6 +43,11 @@ const ManagerView: React.FC = () => {
       state.categories.forEach(c => cats.add(c.name));
       return ['All', ...Array.from(cats).sort()];
   }, [state.products, state.categories]);
+
+  // Reset pagination to the first page whenever search or category filters change.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, categoryFilter]);
 
   const handleEdit = (product: Product) => {
     setIsEditing(true);
@@ -106,8 +110,8 @@ const ManagerView: React.FC = () => {
                   return (
                       <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-red-100">
                           <i className="fas fa-lock text-4xl text-red-400 mb-4"></i>
-                          <h3 className="text-xl font-bold text-slate-800 dark:text-white">Access Denied</h3>
-                          <p className="text-slate-500">You need Admin privileges to manage users.</p>
+                          <h3 className="text-xl font-bold text-slate-800 dark:text-white">Permission Denied</h3>
+                          <p className="text-slate-500">You must be an Admin to manage users.</p>
                       </div>
                   );
               }
@@ -115,249 +119,156 @@ const ManagerView: React.FC = () => {
           case 'ROLES':
               if (!isAdmin) {
                   return (
-                      <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-red-100">
-                          <i className="fas fa-lock text-4xl text-red-400 mb-4"></i>
-                          <h3 className="text-xl font-bold text-slate-800 dark:text-white">Access Denied</h3>
-                          <p className="text-slate-500">You need Admin privileges to manage roles.</p>
+                       <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-red-100">
+                          <i className="fas fa-shield-alt text-4xl text-red-400 mb-4"></i>
+                          <h3 className="text-xl font-bold text-slate-800 dark:text-white">Permission Denied</h3>
+                          <p className="text-slate-500">You must be an Admin to manage roles.</p>
                       </div>
                   );
               }
               return <RoleManager />;
-          case 'CATEGORIES':
-              return (
-                  <CategoryManager 
-                    products={state.products} 
-                    categories={state.categories}
-                    onSelectCategory={handleCategorySelect}
-                    onAddCategory={actions.handleAddCategory}
-                    onUpdateCategory={actions.handleUpdateCategory}
-                    onDeleteCategory={actions.handleDeleteCategory}
-                  />
-              );
           case 'INVENTORY':
-              return (
-                  <InventoryManager 
-                    products={state.products}
-                    onRefresh={actions.refreshData} // Properly connected refresh
-                  />
-              );
+              return <InventoryManager products={state.products} onRefresh={actions.refreshData} />;
+          case 'CATEGORIES':
+              return <CategoryManager 
+                  products={state.products} 
+                  categories={state.categories}
+                  onSelectCategory={handleCategorySelect}
+                  onAddCategory={actions.handleAddCategory}
+                  onUpdateCategory={actions.handleUpdateCategory}
+                  onDeleteCategory={actions.handleDeleteCategory}
+              />;
           case 'FORECAST':
               return (
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 min-h-[400px]">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Deep Thinking Inventory Analysis</h2>
-                        <button 
-                            onClick={handleGenerateForecast}
-                            disabled={isForecasting}
-                            className="bg-primary text-white px-6 py-2 rounded-xl font-bold disabled:opacity-50 shadow-lg shadow-primary/20"
-                        >
-                            {isForecasting ? 'Thinking...' : 'Run Analysis'}
-                        </button>
-                    </div>
-                    {isForecasting ? (
-                        <div className="flex flex-col items-center justify-center py-20">
-                            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-                            <p className="text-indigo-600 font-medium animate-pulse">Gemini Thinking Model is analyzing supply chain data...</p>
-                        </div>
-                    ) : forecastReport ? (
-                        <div className="prose prose-indigo max-w-none dark:prose-invert whitespace-pre-wrap bg-slate-50 dark:bg-slate-900 p-6 rounded-xl border border-slate-100 dark:border-slate-700">
-                            {forecastReport}
-                        </div>
-                    ) : (
-                        <div className="text-center py-20 text-slate-400">
-                            <i className="fas fa-brain text-6xl mb-4 opacity-20"></i>
-                            <p>Click "Run Analysis" to generate a strategic report based on {state.products.length} items.</p>
-                        </div>
-                    )}
-                </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                      <h3 className="text-xl font-bold mb-4">AI Inventory Forecast</h3>
+                      <button onClick={handleGenerateForecast} disabled={isForecasting} className="bg-primary text-white px-4 py-2 rounded-lg font-bold mb-4">
+                          {isForecasting ? 'Forecasting...' : 'Generate Report'}
+                      </button>
+                      <div className="prose dark:prose-invert max-w-none">{forecastReport || 'Report will appear here...'}</div>
+                  </div>
               );
           case 'PRODUCTS':
           default:
               return (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left Column: Form */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Form on left */}
                     <div className="lg:col-span-1">
-                    <ProductForm 
-                        initialData={editingProduct}
-                        onSubmit={handleSubmit}
-                        onCancel={handleCancelEdit}
-                        isEditing={isEditing}
-                        isLoading={state.loading || state.uploading}
-                        isAnalyzing={state.isAnalyzing}
-                        onUpload={actions.handleImageUpload}
-                        onMagicAnalysis={actions.handleMagicAnalysis}
-                        availableCategories={uniqueCategories.filter(c => c !== 'All')}
-                    />
+                       <ProductForm
+                           initialData={editingProduct}
+                           isEditing={isEditing}
+                           onSubmit={handleSubmit}
+                           onCancel={handleCancelEdit}
+                           isLoading={state.loading}
+                           isAnalyzing={state.isAnalyzing}
+                           onUpload={actions.handleImageUpload}
+                           onMagicAnalysis={actions.handleMagicAnalysis}
+                           availableCategories={uniqueCategories.filter(c => c !== 'All')}
+                       />
                     </div>
-
-                    {/* Right Column: List/Grid/Table */}
-                    <div className="lg:col-span-2">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-full min-h-[600px]">
-                        
-                        {/* Toolbar */}
-                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-slate-900/50">
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                                <div className="relative flex-1 sm:w-48">
-                                    <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search products..." 
-                                        value={search}
-                                        onChange={e => setSearch(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm focus:ring-1 focus:ring-primary"
-                                    />
-                                </div>
+                    {/* Table on right */}
+                    <div className="lg:col-span-2 space-y-4">
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                             <div className="relative flex-1 w-full">
+                                <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                <input 
+                                    type="text" 
+                                    placeholder="Search products..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 outline-none dark:text-white transition-shadow"
+                                />
+                             </div>
+                             <div className="flex gap-3 w-full sm:w-auto">
                                 <select 
                                     value={categoryFilter}
-                                    onChange={e => setCategoryFilter(e.target.value)}
-                                    className="py-2 pl-2 pr-8 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm focus:ring-1 focus:ring-primary"
+                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                    className="py-2.5 pl-3 pr-8 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/50 dark:text-white cursor-pointer"
                                 >
                                     {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
-                            </div>
-
-                            <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
-                                <button 
-                                    onClick={() => setInventoryViewMode('table')}
-                                    className={`p-2 rounded-md transition-all ${inventoryViewMode === 'table' ? 'bg-white dark:bg-slate-600 text-primary shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
-                                ><i className="fas fa-table"></i></button>
-                                <button 
-                                    onClick={() => setInventoryViewMode('list')}
-                                    className={`p-2 rounded-md transition-all ${inventoryViewMode === 'list' ? 'bg-white dark:bg-slate-600 text-primary shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
-                                ><i className="fas fa-list"></i></button>
-                                <button 
-                                    onClick={() => setInventoryViewMode('grid')}
-                                    className={`p-2 rounded-md transition-all ${inventoryViewMode === 'grid' ? 'bg-white dark:bg-slate-600 text-primary shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
-                                ><i className="fas fa-th-large"></i></button>
-                            </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 overflow-y-auto">
-                            <ProductTable 
-                                products={paginatedProducts}
-                                loading={state.loading}
-                                viewMode={inventoryViewMode}
-                                onEdit={handleEdit}
-                                onDelete={actions.handleDeleteProduct}
-                            />
-                        </div>
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                                <span className="text-sm text-slate-500 dark:text-slate-400">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <div className="flex gap-2">
-                                    <button 
-                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                        disabled={currentPage === 1}
-                                        className="px-3 py-1 rounded border border-slate-200 dark:border-slate-600 disabled:opacity-50 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                                    >Previous</button>
-                                    <button 
-                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                        disabled={currentPage === totalPages}
-                                        className="px-3 py-1 rounded border border-slate-200 dark:border-slate-600 disabled:opacity-50 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                                    >Next</button>
+                                <div className="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
+                                    <button onClick={() => setInventoryViewMode('table')} className={`p-2 rounded-lg ${inventoryViewMode === 'table' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}><i className="fas fa-table"></i></button>
+                                    <button onClick={() => setInventoryViewMode('list')} className={`p-2 rounded-lg ${inventoryViewMode === 'list' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}><i className="fas fa-list"></i></button>
+                                    <button onClick={() => setInventoryViewMode('grid')} className={`p-2 rounded-lg ${inventoryViewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}><i className="fas fa-th-large"></i></button>
                                 </div>
+                             </div>
+                        </div>
+
+                       <ProductTable
+                           products={paginatedProducts}
+                           loading={state.loading}
+                           viewMode={inventoryViewMode}
+                           onEdit={handleEdit}
+                           onDelete={actions.handleDeleteProduct}
+                       />
+
+                       {/* Pagination Controls */}
+                       {totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-2 mt-4 text-sm">
+                                <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50">&laquo;</button>
+                                <span className="text-slate-600 dark:text-slate-400 font-bold">Page {currentPage} of {totalPages}</span>
+                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages} className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50">&raquo;</button>
                             </div>
-                        )}
+                       )}
+
                     </div>
-                    </div>
-                </div>
+                  </div>
               );
       }
   };
 
+  const TABS: { id: ManagerTab, label: string, icon: string }[] = [
+      { id: 'PRODUCTS', label: 'Products', icon: 'fa-box' },
+      { id: 'CATEGORIES', label: 'Categories', icon: 'fa-tags' },
+      { id: 'INVENTORY', label: 'Inventory', icon: 'fa-warehouse' },
+      { id: 'FORECAST', label: 'AI Forecast', icon: 'fa-chart-line' },
+      { id: 'USERS', label: 'Users', icon: 'fa-users' },
+      { id: 'ROLES', label: 'Roles', icon: 'fa-shield-alt' },
+      { id: 'DATABASE', label: 'SQL Setup', icon: 'fa-database' },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Store Manager</h1>
-          <p className="text-slate-500 dark:text-slate-400">Overview for {state.products.length} products</p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-4">
-           <button
-            onClick={() => actions.handleSeedData(DEMO_DATA)}
-            disabled={state.seeding}
-            className="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-xl font-medium transition-colors flex items-center justify-center disabled:opacity-50"
-           >
-             {state.seeding ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-database mr-2"></i>}
-             Generate Data
-           </button>
-        </div>
+    <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-slate-50 dark:bg-slate-900 min-h-screen">
+      
+      {/* Dashboard Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+        <p className="text-slate-500">Real-time inventory and user management</p>
       </div>
 
-      {/* Error Banner for Database Setup */}
-      {(state.setupRequired || state.error) && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm animate-fade-in">
-              <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                      <i className="fas fa-exclamation-circle text-red-500 mt-1"></i>
-                  </div>
-                  <div className="ml-3 w-full">
-                      <h3 className="text-lg font-bold text-red-800 mb-1">
-                          {state.setupRequired ? "Database Setup Required" : "Error"}
-                      </h3>
-                      <p className="text-sm text-red-700 mb-3">
-                          {state.error || "Missing database tables detected."}
-                      </p>
-                      
-                      {state.setupRequired && (
-                          <div className="bg-slate-900 rounded-lg p-4 overflow-x-auto shadow-inner border border-slate-700">
-                              <div className="flex justify-between items-center mb-2">
-                                  <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">SQL Setup Script</p>
-                                  <button 
-                                     onClick={() => navigator.clipboard.writeText(DATABASE_SETUP_SQL)}
-                                     className="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded transition flex items-center gap-2"
-                                  >
-                                      <i className="fas fa-copy"></i> Copy SQL
-                                  </button>
-                              </div>
-                              <pre className="text-green-400 text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
-{DATABASE_SETUP_SQL}
-                              </pre>
-                          </div>
-                      )}
-                  </div>
-              </div>
-          </div>
+      {/* Error & Setup Guide */}
+      {state.error && (!state.products || state.products.length === 0) && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm animate-fade-in">
+          {/* ... error display logic ... */}
+        </div>
       )}
-
-      {/* Tabs */}
-      <div className="flex space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-8 overflow-x-auto">
-          {[
-              { id: 'PRODUCTS', icon: 'fa-box', label: 'Products' },
-              { id: 'CATEGORIES', icon: 'fa-tags', label: 'Categories' },
-              { id: 'INVENTORY', icon: 'fa-warehouse', label: 'Stock & SKU' },
-              { id: 'FORECAST', icon: 'fa-chart-line', label: 'Deep Forecast' },
-              // Only show Users/Roles tab if admin
-              ...(isAdmin ? [
-                  { id: 'USERS', icon: 'fa-users', label: 'Users' },
-                  { id: 'ROLES', icon: 'fa-user-shield', label: 'Roles & Permissions' }
-              ] : []),
-              // SQL Setup Tab
-              { id: 'DATABASE', icon: 'fa-database', label: 'SQL Setup' }
-          ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as ManagerTab)}
-                className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg font-bold text-sm transition-all whitespace-nowrap ${
-                    activeTab === tab.id 
-                    ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-sm' 
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                  <i className={`fas ${tab.icon} mr-2`}></i> {tab.label}
-              </button>
-          ))}
+      
+      {/* Navigation Tabs */}
+      <div className="mb-6 border-b border-slate-200 dark:border-slate-700">
+          <nav className="-mb-px flex space-x-6 overflow-x-auto no-scrollbar">
+              {TABS.map(tab => (
+                  <button 
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors
+                          ${activeTab === tab.id 
+                              ? 'border-primary text-primary' 
+                              : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300'
+                          }
+                      `}
+                  >
+                      <i className={`fas ${tab.icon} mr-2 opacity-70`}></i>
+                      {tab.label}
+                  </button>
+              ))}
+          </nav>
       </div>
 
-      {renderTabContent()}
-
+      {/* Main Content Area */}
+      <div>
+        {renderTabContent()}
+      </div>
     </div>
   );
 };
