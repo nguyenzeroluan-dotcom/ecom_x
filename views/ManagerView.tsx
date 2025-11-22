@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useProductManager } from '../hooks/useProductManager';
-import { ManagerTab, UserProfile } from '../types';
+import { ManagerTab, UserProfile, ViewState } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 // Import Layout Components
@@ -40,7 +40,11 @@ export const TABS: { id: ManagerTab, label: string, icon: string, adminOnly: boo
     { id: 'DATABASE', label: 'SQL Setup', icon: 'fa-database', adminOnly: true },
 ];
 
-const ManagerView: React.FC = () => {
+interface ManagerViewProps {
+    setView: (view: ViewState) => void;
+}
+
+const ManagerView: React.FC<ManagerViewProps> = ({ setView }) => {
     const { 
         products, 
         categories, 
@@ -121,6 +125,7 @@ const ManagerView: React.FC = () => {
                     isAdmin={isAdmin}
                     isCollapsed={isSidebarCollapsed}
                     setIsCollapsed={setIsSidebarCollapsed}
+                    setView={setView}
                 />
                 <main className={`flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
                     <div className="py-8 px-4 sm:px-6 lg:px-8">

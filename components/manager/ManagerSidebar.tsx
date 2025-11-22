@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ManagerTab, UserProfile } from '../../types';
+import { ManagerTab, UserProfile, ViewState } from '../../types';
 
 interface ManagerSidebarProps {
     tabs: { id: ManagerTab, label: string, icon: string, adminOnly: boolean }[];
@@ -11,9 +11,10 @@ interface ManagerSidebarProps {
     isAdmin: boolean;
     isCollapsed: boolean;
     setIsCollapsed: (isCollapsed: boolean) => void;
+    setView: (view: ViewState) => void;
 }
 
-const ManagerSidebar: React.FC<ManagerSidebarProps> = ({ tabs, activeTab, setActiveTab, user, signOut, isAdmin, isCollapsed, setIsCollapsed }) => {
+const ManagerSidebar: React.FC<ManagerSidebarProps> = ({ tabs, activeTab, setActiveTab, user, signOut, isAdmin, isCollapsed, setIsCollapsed, setView }) => {
     
     const visibleTabs = tabs.filter(tab => !tab.adminOnly || isAdmin);
 
@@ -43,8 +44,12 @@ const ManagerSidebar: React.FC<ManagerSidebarProps> = ({ tabs, activeTab, setAct
         <>
             {/* Desktop Sidebar */}
             <aside className={`fixed top-0 left-0 z-40 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden lg:flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
-                <div className="flex items-center h-16 px-6 border-b border-slate-200 dark:border-slate-800 shrink-0">
-                     <div className="bg-gradient-to-br from-primary to-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+                <div 
+                    className="flex items-center h-16 px-6 border-b border-slate-200 dark:border-slate-800 shrink-0 cursor-pointer group"
+                    onClick={() => setView(ViewState.HOME)}
+                    title="Back to Marketplace"
+                >
+                     <div className="bg-gradient-to-br from-primary to-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
                         <i className="fas fa-cube text-xl"></i>
                     </div>
                     {!isCollapsed && <span className="ml-3 font-bold text-xl text-slate-800 dark:text-white tracking-tight font-display transition-opacity duration-200">NexusAdmin</span>}

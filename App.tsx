@@ -64,7 +64,7 @@ const AppContent: React.FC = () => {
       case ViewState.THINKING:
         return <div className="max-w-7xl mx-auto px-4 py-8"><ThinkingAssistant /></div>;
       case ViewState.MANAGER:
-        return isAdmin ? <ManagerView /> : <AccessDeniedView setView={setView} />;
+        return isAdmin ? <ManagerView setView={setView} /> : <AccessDeniedView setView={setView} />;
       case ViewState.CHECKOUT:
         return <CheckoutView setView={setView} />;
       case ViewState.ORDERS:
