@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
   const { toggleCart, itemCount } = useCart();
   const { isDarkMode, toggleTheme, wishlist, toggleWishlistDrawer } = usePreferences();
   const { openModal } = useModal();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const navItems = [
@@ -27,6 +27,14 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
     { id: ViewState.ORDERS, label: 'Orders', icon: 'fa-box-open' },
     { id: ViewState.MANAGER, label: 'Manager', icon: 'fa-tasks' },
   ];
+
+  const visibleNavItems = navItems.filter(item => {
+    if (item.id === ViewState.MANAGER) {
+      return isAdmin;
+    }
+    return true;
+  });
+
 
   const handleUserIconClick = () => {
       if (user) {
@@ -55,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
           
           <div className="flex items-center gap-1">
             <nav className="hidden xl:flex space-x-1 mr-4">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
@@ -158,7 +166,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
       
       {/* Mobile Navigation */}
       <div className="md:hidden border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-between py-2 overflow-x-auto no-scrollbar px-2">
-         {navItems.map((item) => (
+         {visibleNavItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setView(item.id)}

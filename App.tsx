@@ -10,6 +10,7 @@ import MarketView from './views/MarketView';
 import CheckoutView from './views/CheckoutView';
 import OrdersView from './views/OrdersView';
 import UserProfileView from './views/UserProfileView';
+import AccessDeniedView from './views/AccessDeniedView';
 import { ViewState } from './types';
 import { ModalProvider } from './contexts/ModalContext';
 import ModalRoot from './components/modals/ModalRoot';
@@ -18,7 +19,7 @@ import CartDrawer from './components/cart/CartDrawer';
 import WishlistDrawer from './components/WishlistDrawer';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { PreferencesProvider } from './contexts/PreferencesContext';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ToastContainer from './components/common/ToastContainer';
 import Footer from './components/common/Footer';
 import PromoBanner from './components/PromoBanner';
@@ -27,6 +28,7 @@ import BackToTop from './components/common/BackToTop';
 
 const AppContent: React.FC = () => {
   const [view, setView] = useState<ViewState>(ViewState.HOME);
+  const { isAdmin } = useAuth();
 
   // Scroll to top when view changes
   useEffect(() => {
@@ -46,7 +48,7 @@ const AppContent: React.FC = () => {
       case ViewState.THINKING:
         return <div className="max-w-7xl mx-auto px-4 py-8"><ThinkingAssistant /></div>;
       case ViewState.MANAGER:
-        return <ManagerView />;
+        return isAdmin ? <ManagerView /> : <AccessDeniedView setView={setView} />;
       case ViewState.CHECKOUT:
         return <CheckoutView setView={setView} />;
       case ViewState.ORDERS:
