@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';

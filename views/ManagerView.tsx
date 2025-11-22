@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useProductManager } from '../hooks/useProductManager';
 import { ManagerTab, UserProfile, ViewState } from '../types';
@@ -11,7 +12,8 @@ import ManagerHeader from '../components/manager/ManagerHeader';
 // Import Tab Components
 import Dashboard from '../components/manager/Dashboard';
 import ProductManager from '../components/ProductManager';
-import CategoryManager from '../components/manager/CategoryManager';
+// FIX: Changed to a named import to resolve the module resolution error.
+import { CategoryManager } from '../components/manager/CategoryManager';
 import InventoryManager from '../components/manager/InventoryManager';
 import MediaManager from '../components/manager/MediaManager';
 import ForecastManager from '../components/manager/ForecastManager';

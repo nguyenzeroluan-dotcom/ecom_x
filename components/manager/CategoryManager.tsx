@@ -14,7 +14,8 @@ interface CategoryManagerProps {
   onDeleteCategory: (id: number) => Promise<boolean>;
 }
 
-const CategoryManager: React.FC<CategoryManagerProps> = ({ 
+// FIX: Changed to a named export to resolve "no default export" error.
+export const CategoryManager: React.FC<CategoryManagerProps> = ({ 
   products, 
   categories: dbCategories, 
   onSelectCategory,
@@ -243,97 +244,80 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
                 
                 <div className="h-32 bg-slate-100 dark:bg-slate-700 relative overflow-hidden">
                     <img src={cat.image_url || 'https://via.placeholder.com/400?text=No+Image'} alt={cat.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
-                        <h3 className="text-white font-bold text-lg truncate w-full">{cat.name}</h3>
-                        <p className="text-white/70 text-xs line-clamp-1">{cat.description || (cat.is_db_persisted ? 'No description' : 'Product-derived category')}</p>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="absolute top-3 right-3 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button onClick={() => handleEdit(cat)} className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40"><i className="fas fa-edit"></i></button>
+                        <button onClick={() => handleDelete(cat)} className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40"><i className="fas fa-trash"></i></button>
                     </div>
                     {!cat.is_db_persisted && (
-                        <span className="absolute top-2 right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
-                            Unsynced
-                        </span>
+                        <button onClick={() => handleSync(cat)} className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse flex items-center gap-1" title="This category is not in the database. Click to add it.">
+                            <i className="fas fa-exclamation-triangle"></i> Not Synced
+                        </button>
                     )}
                 </div>
-
+                
                 <div className="p-4 flex-1 flex flex-col">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="text-center">
-                            <p className="text-xs text-slate-500 uppercase font-bold">Items</p>
-                            <p className="text-lg font-bold text-slate-800 dark:text-white">{cat.count}</p>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{cat.name}</h3>
+                    <p className="text-xs text-slate-500 line-clamp-2 mt-1 flex-grow">{cat.description || 'No description.'}</p>
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-sm">
+                        <div className="text-slate-500">
+                            Products: <span className="font-bold text-slate-800 dark:text-slate-200">{cat.count}</span>
                         </div>
-                        <div className="text-center border-l border-slate-100 dark:border-slate-700">
-                            <p className="text-xs text-slate-500 uppercase font-bold">Value</p>
-                            <p className="text-lg font-bold text-slate-800 dark:text-white">${cat.totalValue.toLocaleString()}</p>
-                        </div>
-                    </div>
-
-                    <div className="mt-auto flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
-                        <button onClick={() => onSelectCategory(cat.name)} className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold" title="View Products">
-                            <i className="fas fa-eye"></i>
-                        </button>
-                        {cat.is_db_persisted ? (
-                            <>
-                                <button onClick={() => handleEdit(cat)} className="flex-1 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-600 dark:text-blue-400 py-2 rounded-lg text-xs font-bold" title="Edit Details">
-                                    <i className="fas fa-edit"></i>
-                                </button>
-                                <button onClick={() => handleDelete(cat)} className="flex-1 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-600 dark:text-red-400 py-2 rounded-lg text-xs font-bold" title="Delete">
-                                    <i className="fas fa-trash"></i>
-                                </button>
-                            </>
-                        ) : (
-                            <button onClick={() => handleSync(cat)} className="flex-[2] bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 text-orange-700 dark:text-orange-400 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
-                                <i className="fas fa-sync"></i> Add to DB
-                            </button>
-                        )}
+                        <button onClick={() => onSelectCategory(cat.name)} className="text-primary font-bold text-sm hover:underline">View</button>
                     </div>
                 </div>
+
             </div>
             ))}
         </div>
       ) : (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-              <table className="w-full text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-                      <tr>
-                          <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Name</th>
-                          <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Description</th>
-                          <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Status</th>
-                          <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
-                      </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {aggregatedCategories.map(cat => (
-                          <tr key={cat.name} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                              <td className="px-6 py-4 flex items-center gap-3">
-                                  <img src={cat.image_url} className="w-8 h-8 rounded bg-slate-200 object-cover" alt="" />
-                                  <span className="font-bold text-slate-900 dark:text-white">{cat.name}</span>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-slate-500 truncate max-w-xs">
-                                  {cat.description || '-'}
-                              </td>
-                              <td className="px-6 py-4">
-                                  {cat.is_db_persisted ? <span className="text-green-600 text-xs font-bold">Active</span> : <span className="text-orange-500 text-xs font-bold">Unsynced</span>}
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                  <div className="flex justify-end gap-2">
-                                      {cat.is_db_persisted ? (
-                                          <>
-                                            <button onClick={() => handleEdit(cat)} className="text-blue-500 hover:bg-blue-50 p-2 rounded"><i className="fas fa-edit"></i></button>
-                                            <button onClick={() => handleDelete(cat)} className="text-red-500 hover:bg-red-50 p-2 rounded"><i className="fas fa-trash"></i></button>
-                                          </>
-                                      ) : (
-                                          <button onClick={() => handleSync(cat)} className="text-orange-500 hover:bg-orange-50 p-2 rounded text-xs font-bold">Sync</button>
-                                      )}
-                                  </div>
-                              </td>
-                          </tr>
-                      ))}
-                  </tbody>
-              </table>
-          </div>
+        // List View
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 dark:bg-slate-900">
+                        <tr>
+                            <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Category</th>
+                            <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Products</th>
+                            <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Inventory Value</th>
+                            <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Status</th>
+                            <th className="px-6 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                        {aggregatedCategories.map(cat => (
+                            <tr key={cat.name} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <img src={cat.image_url} alt={cat.name} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                                        <div>
+                                            <p className="font-bold text-slate-900 dark:text-white">{cat.name}</p>
+                                            <p className="text-xs text-slate-500 w-64 truncate">{cat.description}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">{cat.count}</td>
+                                <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">${cat.totalValue.toLocaleString()}</td>
+                                <td className="px-6 py-4">
+                                    {cat.is_db_persisted ? (
+                                        <span className="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700">Synced</span>
+                                    ) : (
+                                        <button onClick={() => handleSync(cat)} className="px-2 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 flex items-center gap-1">
+                                            <i className="fas fa-sync"></i> Sync to DB
+                                        </button>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4 space-x-2 text-right">
+                                    <button onClick={() => handleEdit(cat)} className="text-slate-400 hover:text-blue-500"><i className="fas fa-edit"></i></button>
+                                    <button onClick={() => handleDelete(cat)} className="text-slate-400 hover:text-red-500"><i className="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
       )}
-      
     </div>
   );
 };
-
-export default CategoryManager;

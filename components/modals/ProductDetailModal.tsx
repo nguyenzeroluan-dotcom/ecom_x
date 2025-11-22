@@ -1,6 +1,5 @@
 
 
-
 import React, { useState } from 'react';
 import BaseModal from './BaseModal';
 import { useModal } from '../../contexts/ModalContext';
