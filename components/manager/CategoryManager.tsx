@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo, useRef } from 'react';
 import { Product, Category, CategoryData, ModalType } from '../../types';
-// FIX: Replaced non-existent 'uploadProductImage' with 'uploadMediaAsset'
-import { updateCategoryName, uploadMediaAsset } from '../../services/supabaseClient';
+import { updateCategoryName } from '../../services/categoryService';
+import { uploadMediaAsset } from '../../services/mediaService';
 import { useModal } from '../../contexts/ModalContext';
 import { useProductManager } from '../../hooks/useProductManager'; // For actions context if needed, but props here
 

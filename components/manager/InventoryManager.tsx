@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Product } from '../../types';
-import { updateProduct, logInventoryChange } from '../../services/supabaseClient';
+import { updateProduct } from '../../services/productService';
+import { logInventoryChange } from '../../services/inventoryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useModal } from '../../contexts/ModalContext';
 import { ModalType } from '../../types';

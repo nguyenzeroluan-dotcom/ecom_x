@@ -20,9 +20,16 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onDelete, o
         });
     };
 
+    const handleView = () => {
+        openModal(ModalType.COLLECTION_DETAIL, {
+            collectionId: collection.id,
+            collectionName: collection.name,
+        });
+    };
+
     return (
         <div className="group bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-all hover:shadow-md hover:-translate-y-1">
-            <div className="relative aspect-square w-full p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center cursor-pointer">
+            <div className="relative aspect-square w-full p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center cursor-pointer" onClick={handleView}>
                 {imageCount === 0 && (
                     <div className="w-2/3 h-2/3 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400">
                         <i className="fas fa-folder text-4xl"></i>
@@ -44,7 +51,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onDelete, o
                 <p className="text-xs text-slate-500">{imageCount} items</p>
 
                 <div className="mt-auto pt-4 flex gap-2">
-                    <button onClick={() => alert('View collection feature coming soon!')} className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold" title="View Contents">
+                    <button onClick={handleView} className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2" title="View Contents">
                         <i className="fas fa-eye"></i> View
                     </button>
                     <button onClick={handleEdit} className="bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-blue-600 dark:text-blue-400 p-2 rounded-lg text-xs" title="Edit Name">

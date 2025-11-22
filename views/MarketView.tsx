@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../components/ProductCard';
 import { Product, ModalType, MarketViewMode, SortOption, ViewState } from '../types';
-import { getProducts } from '../services/supabaseClient';
+import { getProducts } from '../services/productService';
 import { usePreferences } from '../contexts/PreferencesContext';
 import { useModal } from '../contexts/ModalContext';
 import { compareProductsAI } from '../services/geminiService';

@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { getAllUsers, updateUserProfile, createUserProfile, deleteUser } from '../../services/supabaseClient';
+import { getAllUsers, updateUserProfile, createUserProfile, deleteUser } from '../../services/userService';
 import { USER_RBAC_SQL } from '../../data/02_user_rbac';
 import { UserProfile } from '../../types';
 import UserTable from './UserTable';

@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../../contexts/CartContext';
 import { ViewState, Product } from '../../types';
-import { getProducts } from '../../services/supabaseClient';
+import { getProducts } from '../../services/productService';
 import { getCartUpsell } from '../../services/geminiService';
 
 interface CartDrawerProps {

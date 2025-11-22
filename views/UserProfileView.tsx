@@ -1,9 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-// FIX: Replaced non-existent 'uploadProductImage' with 'uploadMediaAsset'
-import { uploadMediaAsset, DATABASE_SETUP_SQL } from '../services/supabaseClient';
+import { uploadMediaAsset } from '../services/mediaService';
+import { DATABASE_SETUP_SQL } from '../services/databaseService';
 import OrdersView from './OrdersView';
 import { ViewState } from '../types';
 

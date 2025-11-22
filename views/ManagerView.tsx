@@ -13,7 +13,8 @@ import Dashboard from '../components/manager/Dashboard';
 import MediaManager from '../components/manager/MediaManager';
 import { Product, ManagerTab } from '../types';
 import { forecastInventory } from '../services/geminiService';
-import { DATABASE_SETUP_SQL } from '../services/supabaseClient';
+// FIX: Corrected import path for DATABASE_SETUP_SQL.
+import { DATABASE_SETUP_SQL } from '../services/databaseService';
 import { useAuth } from '../contexts/AuthContext';
 
 const DEMO_DATA = [

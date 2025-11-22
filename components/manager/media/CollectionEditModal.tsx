@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BaseModal from '../../modals/BaseModal';
 import { useModal } from '../../../contexts/ModalContext';
 import { MediaCollection } from '../../../types';
-import { updateMediaCollection } from '../../../services/supabaseClient';
+import { updateMediaCollection } from '../../../services/mediaService';
 
 const CollectionEditModal: React.FC = () => {
     const { isOpen, closeModal, modalProps } = useModal();

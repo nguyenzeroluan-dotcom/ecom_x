@@ -1,9 +1,7 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import BaseModal from '../../modals/BaseModal';
 import { useModal } from '../../../contexts/ModalContext';
-import { getMediaAssets, uploadMediaAsset, getMediaCollections } from '../../../services/supabaseClient';
+import { getMediaAssets, uploadMediaAsset, getMediaCollections } from '../../../services/mediaService';
 import { MediaAsset, MediaCollection } from '../../../types';
 import { useAuth } from '../../../contexts/AuthContext';
 import MediaCard from './MediaCard';

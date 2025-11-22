@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppRole } from '../../types';
-import { getAppRoles, createAppRole, updateAppRole, deleteAppRole } from '../../services/supabaseClient';
+import { getAppRoles, createAppRole, updateAppRole, deleteAppRole } from '../../services/userService';
 import { ROLES_PERMISSIONS_SQL } from '../../data/03_roles_permissions';
 import { useModal } from '../../contexts/ModalContext';
 import { ModalType } from '../../types';

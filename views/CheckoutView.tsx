@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { ViewState } from '../types';
-import { createOrder, DATABASE_SETUP_SQL } from '../services/supabaseClient';
+import { createOrder } from '../services/orderService';
+import { DATABASE_SETUP_SQL } from '../services/databaseService';
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_CHAT_MODEL } from '../constants';
 import { useAuth } from '../contexts/AuthContext';

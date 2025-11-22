@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { usePreferences } from '../contexts/PreferencesContext';
 import { useCart } from '../contexts/CartContext';
 import { Product } from '../types';
-import { getProducts } from '../services/supabaseClient';
+import { getProducts } from '../services/productService';
 
 const WishlistDrawer: React.FC = () => {
   const { isWishlistOpen, toggleWishlistDrawer, wishlist, toggleWishlist } = usePreferences();

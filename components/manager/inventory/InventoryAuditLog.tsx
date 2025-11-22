@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getInventoryLogs } from '../../../services/supabaseClient';
+import { getInventoryLogs } from '../../../services/inventoryService';
 import { InventoryLog } from '../../../types';
 
 const InventoryAuditLog: React.FC = () => {

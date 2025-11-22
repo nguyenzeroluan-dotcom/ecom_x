@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { sendChatMessage } from '../services/geminiService';
 import { ChatMessage } from '../types';
-import { getProducts } from '../services/supabaseClient';
+import { getProducts } from '../services/productService';
 
 // Simple declaration for Web Speech API
 declare global {

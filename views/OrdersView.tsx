@@ -1,6 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
-import { getOrders, DATABASE_SETUP_SQL } from '../services/supabaseClient';
+import { getOrders } from '../services/orderService';
+import { DATABASE_SETUP_SQL } from '../services/databaseService';
 import { Order } from '../types';
 import { ViewState } from '../types';
 import { useAuth } from '../contexts/AuthContext';

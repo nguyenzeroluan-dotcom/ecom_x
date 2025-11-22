@@ -1,10 +1,9 @@
-
 import React from 'react';
 import BaseModal from '../../modals/BaseModal';
 import { useModal } from '../../../contexts/ModalContext';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { MediaAsset, ModalType } from '../../../types';
-import { deleteMediaAsset } from '../../../services/supabaseClient';
+import { deleteMediaAsset } from '../../../services/mediaService';
 
 const MediaDetailModal: React.FC = () => {
     const { isOpen, closeModal, modalProps } = useModal();

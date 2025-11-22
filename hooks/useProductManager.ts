@@ -1,20 +1,20 @@
-
-
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../services/supabaseClient';
 import { 
-  supabase, 
   getProducts, 
   addProduct, 
   updateProduct, 
   deleteProduct,
   deleteProducts,
-  seedProducts, 
-  uploadMediaAsset,
+  seedProducts
+} from '../services/productService';
+import { 
   getCategories,
   createCategory,
   updateCategory,
   deleteCategory
-} from '../services/supabaseClient';
+} from '../services/categoryService';
+import { uploadMediaAsset } from '../services/mediaService';
 import { identifyProductFromImage } from '../services/geminiService';
 import { Product, Category, ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';

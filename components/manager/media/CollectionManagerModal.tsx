@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import BaseModal from '../../modals/BaseModal';
 import { useModal } from '../../../contexts/ModalContext';
 import { MediaCollection } from '../../../types';
-import { getMediaCollections, createMediaCollection, addAssetsToCollection } from '../../../services/supabaseClient';
+import { getMediaCollections, createMediaCollection, addAssetsToCollection } from '../../../services/mediaService';
 
 const CollectionManagerModal: React.FC = () => {
     const { isOpen, closeModal, modalProps } = useModal();

@@ -17,9 +17,10 @@ interface MediaCardProps {
     onSelect: () => void;
     isSelectMode?: boolean;
     onDoubleClick?: () => void;
+    onRemove?: () => void;
 }
 
-const MediaCard: React.FC<MediaCardProps> = ({ asset, uploadingFile, isSelected, onSelect, isSelectMode = false, onDoubleClick }) => {
+const MediaCard: React.FC<MediaCardProps> = ({ asset, uploadingFile, isSelected, onSelect, isSelectMode = false, onDoubleClick, onRemove }) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
@@ -95,8 +96,19 @@ const MediaCard: React.FC<MediaCardProps> = ({ asset, uploadingFile, isSelected,
                 <div className={`absolute inset-0 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${isSelectMode ? '' : 'opacity-0 group-hover:opacity-100'}`}></div>
             )}
 
+            {/* Remove Button (for collection view) */}
+            {onRemove && !uploadingFile && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-600/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all z-20 hover:bg-red-500"
+                    title="Remove from collection"
+                >
+                    <i className="fas fa-times text-xs"></i>
+                </button>
+            )}
+
             {/* Checkbox */}
-            {!uploadingFile && (
+            {!uploadingFile && !onRemove && (
                 <div
                     className={`absolute top-2 left-2 w-5 h-5 rounded-md border-2 bg-white/50 backdrop-blur-sm flex items-center justify-center cursor-pointer transition-all
                         ${isSelected ? 'bg-primary border-primary' : 'border-white/50'}

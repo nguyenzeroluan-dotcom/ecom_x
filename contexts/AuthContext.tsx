@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase, getUserProfile, updateUserProfile } from '../services/supabaseClient';
+import { supabase } from '../services/supabaseClient';
+import { getUserProfile, updateUserProfile } from '../services/userService';
 import { UserProfile, AuthContextType } from '../types';
 import { useNotification } from './NotificationContext';
 

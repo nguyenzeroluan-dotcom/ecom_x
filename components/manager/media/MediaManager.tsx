@@ -1,7 +1,4 @@
-
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-// FIX: Corrected import path for media service functions.
 import { 
     getMediaAssets, 
     uploadMediaAsset, 
@@ -10,13 +7,13 @@ import {
     getMediaCollections,
     createMediaCollection,
     deleteMediaCollection
-} from '../../services/mediaService';
-import { MediaAsset, MediaCollection, ModalType } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
-import { useModal } from '../../contexts/ModalContext';
-import { useNotification } from '../../contexts/NotificationContext';
-import MediaCard from './media/MediaCard';
-import CollectionCard from './media/CollectionCard';
+} from '../../../services/mediaService';
+import { MediaAsset, MediaCollection, ModalType } from '../../../types';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useModal } from '../../../contexts/ModalContext';
+import { useNotification } from '../../../contexts/NotificationContext';
+import MediaCard from './MediaCard';
+import CollectionCard from './CollectionCard';
 
 interface UploadingFile {
     id: string;

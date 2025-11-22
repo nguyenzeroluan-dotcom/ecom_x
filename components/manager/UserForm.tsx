@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, UserRole } from '../../types';
-// FIX: Replaced non-existent 'uploadProductImage' with 'uploadMediaAsset'
-import { uploadMediaAsset } from '../../services/supabaseClient';
+import { uploadMediaAsset } from '../../services/mediaService';
 
 interface UserFormProps {
   initialData?: UserProfile | null;
@@ -149,7 +147,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 <p>
                     {formData.role === 'admin' && "Full system access. Can manage users, products, and settings."}
                     {formData.role === 'manager' && "Store management access. Can edit products/orders but cannot manage users."}
-                    {formData.role === 'customer' && "Standard access. Can only view products and manage their own orders."}
+                    {formData.role === 'customer' && "Standard access. Can only view products and manage their own personal orders."}
                 </p>
             </div>
           </div>
