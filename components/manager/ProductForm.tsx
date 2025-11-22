@@ -66,8 +66,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
         is_digital: initialData.is_digital || false,
         digital_content: initialData.digital_content || ''
       });
-      setGalleryImageCount(initialData.gallery_images?.length || 0);
-      setPreviewGallery(initialData.gallery_images || []);
+      
+      // Initialize gallery preview from initialData
+      if (initialData.gallery_images && initialData.gallery_images.length > 0) {
+          setGalleryImageCount(initialData.gallery_images.length);
+          setPreviewGallery(initialData.gallery_images);
+      } else {
+          setGalleryImageCount(0);
+          setPreviewGallery([]);
+      }
     } else {
       setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20', collection_id: undefined, is_digital: false, digital_content: '' });
       setGalleryImageCount(0);
@@ -109,22 +116,29 @@ const ProductForm: React.FC<ProductFormProps> = ({
               collectionId: formData.collection_id,
           },
           onSelect: (media: { imageUrl: string; collectionId: number | null, imageCount: number, previewImages?: string[] }) => {
+              // Update form data with new selections
               setFormData(prev => ({
                   ...prev,
                   image_url: media.imageUrl,
                   collection_id: media.collectionId === null ? undefined : media.collectionId,
               }));
+              
+              // Update preview state immediately
               setGalleryImageCount(media.imageCount || 0);
-              setPreviewGallery(media.previewImages || []);
+              if (media.previewImages && media.previewImages.length > 0) {
+                  setPreviewGallery(media.previewImages);
+              } else {
+                  setPreviewGallery([]);
+              }
           }
       });
   };
 
   const handleUrlSubmit = () => {
       if (urlInputValue.trim()) {
-          setFormData(prev => ({ ...prev, image_url: urlInputValue.trim(), collection_id: undefined }));
-          setGalleryImageCount(0);
-          setPreviewGallery([]);
+          setFormData(prev => ({ ...prev, image_url: urlInputValue.trim() }));
+          // Don't clear collection_id here unless explicit, 
+          // user might want a custom cover URL for a gallery product
           setShowUrlInput(false);
           setUrlInputValue('');
       }
@@ -326,16 +340,19 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <textarea name="description" rows={3} value={formData.description} onChange={handleInputChange} className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:outline-none resize-none dark:bg-slate-900 dark:text-white" placeholder="Product details..." />
           </div>
 
+           {/* Product Media Section */}
            <div className="bg-slate-50 dark:bg-slate-700/40 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-3">
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Product Media</label>
-                    <button 
-                        type="button" 
-                        onClick={() => setShowUrlInput(!showUrlInput)} 
-                        className="text-xs text-slate-500 hover:text-primary font-medium flex items-center gap-1 bg-white dark:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600"
-                    >
-                        <i className="fas fa-link"></i> {showUrlInput ? 'Hide URL Input' : 'Paste URL'}
-                    </button>
+                    <div className="flex gap-2">
+                        <button 
+                            type="button" 
+                            onClick={() => setShowUrlInput(!showUrlInput)} 
+                            className="text-xs text-slate-500 hover:text-primary font-medium flex items-center gap-1 bg-white dark:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600"
+                        >
+                            <i className="fas fa-link"></i> {showUrlInput ? 'Cancel URL' : 'Paste URL'}
+                        </button>
+                    </div>
                 </div>
 
                 {showUrlInput && (
@@ -353,43 +370,53 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
                 <div className="flex flex-col gap-4">
                     <div className="flex gap-4 items-start">
-                        <div className="w-32 h-32 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center relative group">
+                        {/* Main Cover Image Preview */}
+                        <div className="w-32 h-32 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center relative group shadow-sm">
                             {formData.image_url ? (
                                 <>
-                                    <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
-                                    {formData.collection_id && galleryImageCount > 0 && (
-                                        <div className="absolute bottom-1 right-1 bg-slate-900/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                                            <i className="fas fa-images"></i> +{galleryImageCount}
+                                    <img src={formData.image_url} alt="Cover" className="w-full h-full object-cover" />
+                                    {formData.collection_id && (
+                                        <div className="absolute bottom-1 right-1 bg-slate-900/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <i className="fas fa-layer-group"></i> Gallery
                                         </div>
                                     )}
                                 </>
                             ) : (
-                                <i className="fas fa-image text-4xl text-slate-400"></i>
+                                <div className="flex flex-col items-center text-slate-400">
+                                    <i className="fas fa-image text-2xl mb-1"></i>
+                                    <span className="text-[10px]">No Cover</span>
+                                </div>
                             )}
                             <div 
                                 onClick={openMediaLibrary} 
-                                className="absolute inset-0 bg-black/60 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                             >
-                                <i className="fas fa-pen"></i> Change
+                                <i className="fas fa-pen mb-1"></i>
+                                <span className="text-xs font-bold">Change</span>
                             </div>
                         </div>
-                        <div className="flex flex-col justify-center gap-2 py-2">
-                             <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-white dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-600 shadow-sm text-left">
-                                <i className="fas fa-folder-open mr-2 text-yellow-500"></i> Open Media Library
+
+                        {/* Controls */}
+                        <div className="flex flex-col justify-center gap-3 py-2">
+                             <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-white dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-600 shadow-sm text-left transition-colors">
+                                <i className="fas fa-folder-open mr-2 text-yellow-500"></i> Select from Library
                             </button>
                             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] leading-relaxed">
-                                Set a cover image or assign a product gallery from your assets.
+                                Choose a cover image or assign a full gallery collection.
                             </p>
                         </div>
                     </div>
 
                     {/* Gallery Preview Strip */}
                     {previewGallery.length > 0 && (
-                        <div className="mt-2">
-                            <p className="text-xs font-bold text-slate-500 uppercase mb-2">Gallery Preview ({galleryImageCount})</p>
+                        <div className="mt-2 animate-fade-in">
+                            <p className="text-xs font-bold text-slate-500 uppercase mb-2 flex justify-between">
+                                <span>Gallery Preview ({galleryImageCount})</span>
+                                {formData.collection_id && <span className="text-primary">Linked Collection #{formData.collection_id}</span>}
+                            </p>
                             <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
                                 {previewGallery.map((img, idx) => (
-                                    <div key={idx} className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden border border-slate-200 dark:border-slate-600 relative group">
+                                    <div key={idx} className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden border border-slate-200 dark:border-slate-600 relative group bg-slate-200 dark:bg-slate-800">
                                         <img src={img} className="w-full h-full object-cover" alt={`Gallery ${idx}`} />
                                     </div>
                                 ))}

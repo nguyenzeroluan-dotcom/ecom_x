@@ -7,6 +7,7 @@ import { INVENTORY_ADVANCED_SQL } from '../../data/04_inventory_advanced';
 import { MEDIA_MANAGER_SQL } from '../../data/05_media_manager';
 import { MEDIA_COLLECTIONS_SQL } from '../../data/07_media_collections';
 import { EBOOKS_SETUP_SQL } from '../../data/08_ebooks_setup';
+import { GALLERY_VIEW_FIX_SQL } from '../../data/09_gallery_view_fix';
 import { useNotification } from '../../contexts/NotificationContext';
 
 interface ScriptItemProps {
@@ -126,6 +127,13 @@ const SqlViewer: React.FC = () => {
       sql: EBOOKS_SETUP_SQL,
       color: 'text-cyan-400',
       label: 'E-Books'
+    },
+    {
+      title: '8. Gallery View Fix (Critical)',
+      description: 'Run this to fix "gallery_images" persistence issue.',
+      sql: GALLERY_VIEW_FIX_SQL,
+      color: 'text-teal-400',
+      label: 'Gallery Fix'
     }
   ];
 

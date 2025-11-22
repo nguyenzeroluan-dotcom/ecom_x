@@ -55,7 +55,6 @@ const MediaSelectorModal: React.FC = () => {
                             setActiveTab('library');
                         }
                     } else {
-                        // Reset if no selection
                         resetState();
                     }
                 })
@@ -75,20 +74,24 @@ const MediaSelectorModal: React.FC = () => {
         if (!onSelect) return;
 
         if (selectedAsset) {
+            // Single asset selection (Cover Image)
             onSelect({ 
                 imageUrl: selectedAsset.public_url, 
-                collectionId: null,
+                collectionId: null, // Clear collection when manually picking cover
                 imageCount: 0,
                 previewImages: [] 
             });
         } else if (selectedCollection) {
-            const coverImage = selectedCollection.media_assets?.[0]?.public_url || 'https://via.placeholder.com/400?text=Empty';
-            const previewImages = selectedCollection.media_assets?.map(a => a.public_url) || [];
+            // Collection selection (Gallery)
+            // Ensure media_assets exists and map it correctly
+            const assets = selectedCollection.media_assets || [];
+            const coverImage = assets.length > 0 ? assets[0].public_url : 'https://via.placeholder.com/400?text=Empty+Collection';
+            const previewImages = assets.map(a => a.public_url);
             
             onSelect({
                 imageUrl: coverImage,
                 collectionId: selectedCollection.id,
-                imageCount: selectedCollection.media_assets?.length || 0,
+                imageCount: assets.length,
                 previewImages: previewImages
             });
         }
@@ -103,7 +106,7 @@ const MediaSelectorModal: React.FC = () => {
         try {
             const newAsset = await uploadMediaAsset(file, user?.id);
             if (onSelect) {
-                // This is a direct action: upload and immediately assign, then close.
+                // Direct upload -> set as cover
                 onSelect({ 
                     imageUrl: newAsset.public_url, 
                     collectionId: null, 
@@ -207,12 +210,22 @@ const MediaSelectorModal: React.FC = () => {
                     )}
                 </div>
 
-                {/* Footer is only relevant for select/collections tabs */}
+                {/* Footer */}
                 {activeTab !== 'upload' && (
                     <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                        <div className="text-xs text-slate-500 min-h-[16px]">
-                            {selectedAsset && `Selected Image: ${selectedAsset.file_name}`}
-                            {selectedCollection && `Selected Gallery: ${selectedCollection.name}`}
+                        <div className="text-xs text-slate-500 min-h-[16px] flex items-center gap-2">
+                            {selectedAsset && (
+                                <>
+                                    <img src={selectedAsset.public_url} className="w-6 h-6 rounded object-cover" alt="" />
+                                    <span>Selected Image: <strong>{selectedAsset.file_name}</strong></span>
+                                </>
+                            )}
+                            {selectedCollection && (
+                                <>
+                                    <i className="fas fa-images text-slate-400"></i>
+                                    <span>Selected Gallery: <strong>{selectedCollection.name}</strong> ({selectedCollection.media_assets?.length} items)</span>
+                                </>
+                            )}
                         </div>
                         <div className="flex gap-3">
                             <button onClick={closeModal} className="px-4 py-2 rounded-lg font-bold text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>

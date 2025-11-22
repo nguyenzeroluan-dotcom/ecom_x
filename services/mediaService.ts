@@ -188,9 +188,10 @@ export const getMediaCollections = async (): Promise<MediaCollection[]> => {
     }
 
     // Transform data to match MediaCollection type, filtering out any nulls
+    // The nested join returns array of { media_assets: { public_url: ... } }
     const collections = data.map(c => ({
       ...c,
-      media_assets: c.media_assets.map((m: any) => m.media_assets).filter(Boolean)
+      media_assets: c.media_assets ? c.media_assets.map((m: any) => m.media_assets).filter(Boolean) : []
     }));
 
     return collections as MediaCollection[];
