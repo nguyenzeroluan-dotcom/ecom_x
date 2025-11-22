@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from './layouts/MainLayout';
 import ChatBot from './components/ChatBot';
@@ -88,7 +89,7 @@ const AppContent: React.FC = () => {
         <div className="flex-grow">
           {renderContent()}
         </div>
-        <Footer setView={setView} />
+        {view !== ViewState.MANAGER && <Footer setView={setView} />}
       </div>
       <ModalRoot />
       <CartDrawer setView={setView} />

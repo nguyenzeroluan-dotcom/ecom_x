@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, ModalType } from '../../types';
 import { useModal } from '../../contexts/ModalContext';
+import { generateProductDescription } from '../../services/geminiService';
 
 interface ProductFormProps {
   initialData?: Product | null;
@@ -41,6 +42,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   const [galleryImageCount, setGalleryImageCount] = useState(0);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
   const magicInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -121,6 +123,23 @@ const ProductForm: React.FC<ProductFormProps> = ({
       }
       if (magicInputRef.current) magicInputRef.current.value = '';
     }
+  };
+
+  const handleGenerateDescription = async () => {
+      if (!formData.name) {
+          alert("Please enter a product name first.");
+          return;
+      }
+      setIsGeneratingDesc(true);
+      try {
+          const desc = await generateProductDescription(formData.name, formData.category);
+          setFormData(prev => ({ ...prev, description: desc }));
+      } catch (e) {
+          console.error(e);
+          alert("Failed to generate description.");
+      } finally {
+          setIsGeneratingDesc(false);
+      }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -242,7 +261,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+            <div className="flex justify-between items-center mb-1">
+                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+                 <button type="button" onClick={handleGenerateDescription} disabled={isGeneratingDesc} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
+                    {isGeneratingDesc ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-magic"></i>}
+                    Auto-generate
+                 </button>
+            </div>
             <textarea name="description" rows={3} value={formData.description} onChange={handleInputChange} className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:outline-none resize-none dark:bg-slate-900 dark:text-white" placeholder="Product details..." />
           </div>
 

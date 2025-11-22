@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { 
   GEMINI_CHAT_MODEL, 
@@ -203,4 +204,38 @@ export const forecastInventory = async (products: Product[]) => {
     }
   });
   return response.text;
+};
+
+// --- NEW (ADMIN): AI Product Description ---
+export const generateProductDescription = async (productName: string, category: string): Promise<string> => {
+    const ai = getAIClient();
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: `Write an engaging, SEO-friendly e-commerce product description for a product named "${productName}" in the "${category}" category. The description should be around 50-70 words. Use a friendly and persuasive tone. Focus on the key benefits and unique selling points. Do not use markdown.`
+    });
+    return response.text || '';
+};
+
+// --- NEW (ADMIN): AI Business Snapshot ---
+export const generateBusinessSnapshot = async (products: Product[]): Promise<string> => {
+    const ai = getAIClient();
+    if (products.length === 0) return "No product data available to analyze. Add some products to get started!";
+
+    const inventorySummary = JSON.stringify(products.slice(0, 50).map(p => ({
+        name: p.name,
+        stock: p.stock,
+        price: p.price,
+        category: p.category,
+    })));
+
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: `Act as a business analyst. Here is a snapshot of the current inventory: ${inventorySummary}. 
+        Provide a brief, actionable "Business Snapshot" in Markdown format with these sections:
+        - **Key Observation:** One sentence on the most important insight.
+        - **Top Opportunity:** One specific suggestion for growth (e.g., promote a high-stock item).
+        - **Immediate Risk:** One urgent issue to address (e.g., a best-seller that is low on stock).
+        Keep it concise and strategic.`
+    });
+    return response.text || "Could not generate a snapshot at this time.";
 };

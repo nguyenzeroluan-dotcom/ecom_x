@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Product, ManagerViewMode } from '../types';
 import ProductForm from './manager/ProductForm';
 import ProductTable from './manager/ProductTable';
+import { useNotification } from '../contexts/NotificationContext';
 
 interface ProductManagerProps {
   products: Product[];
@@ -35,6 +36,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+  const { addNotification } = useNotification();
 
   useEffect(() => {
     setCurrentPage(1);
@@ -64,6 +66,39 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         return matchSearch && matchCat;
     });
   }, [products, search, categoryFilter]);
+
+  const exportToCsv = () => {
+    if (filteredProducts.length === 0) {
+        addNotification('info', 'No products to export.');
+        return;
+    }
+    const headers = ['id', 'name', 'sku', 'price', 'category', 'stock', 'description', 'image_url'];
+    const csvRows = [
+        headers.join(','),
+        ...filteredProducts.map(p => {
+            const values = headers.map(header => {
+                let value = (p as any)[header] ?? '';
+                // Escape commas and quotes
+                if (typeof value === 'string' && value.includes(',')) {
+                    value = `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            });
+            return values.join(',');
+        })
+    ];
+    
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `products-export-${new Date().toISOString()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addNotification('success', 'Product data exported to CSV.');
+  };
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice(
@@ -105,6 +140,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
             >
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
+             <button onClick={exportToCsv} title="Export to CSV" className="p-2 w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-900 rounded-xl text-slate-500 hover:bg-slate-200"><i className="fas fa-file-csv"></i></button>
             <div className="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
               <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}><i className="fas fa-table"></i></button>
               <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}><i className="fas fa-list"></i></button>

@@ -14,6 +14,7 @@ interface ProductTableProps {
 
 const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode, onEdit, onDelete, onBulkDelete }) => {
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
+  const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
 
   const toggleSelectAll = () => {
       if (selectedIds.length === products.length) {
@@ -33,8 +34,15 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
       if (onBulkDelete) {
         onBulkDelete(selectedIds);
         setSelectedIds([]); // Clear selection after initiating action
+        setIsBulkMenuOpen(false);
       }
   };
+  
+  // Placeholder for future bulk actions
+  const handleBulkSetCategory = () => {
+      alert(`Feature in development: Set category for ${selectedIds.length} items.`);
+      setIsBulkMenuOpen(false);
+  }
 
   if (loading) {
      return <div className="flex justify-center p-12"><i className="fas fa-spinner fa-spin text-2xl text-primary"></i></div>;
@@ -52,13 +60,21 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
   // --- Bulk Action Bar ---
   const BulkActionBar = () => (
       selectedIds.length > 0 && (
-          <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between text-sm animate-slide-up-toast sticky top-0 z-20 shadow-md">
+          <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between text-sm animate-slide-up-toast sticky top-0 z-20 shadow-md rounded-t-xl">
               <span className="font-bold">{selectedIds.length} selected</span>
-              <div className="flex gap-4">
-                  <button onClick={() => setSelectedIds([])} className="hover:underline">Cancel</button>
-                  <button onClick={handleBulkDelete} className="text-red-400 hover:text-red-300 font-bold flex items-center gap-2">
-                      <i className="fas fa-trash"></i> Delete Selected
-                  </button>
+              <div className="flex items-center gap-4">
+                  <button onClick={() => setSelectedIds([])} className="text-slate-300 hover:text-white transition-colors text-xs">Clear</button>
+                  <div className="relative">
+                      <button onClick={() => setIsBulkMenuOpen(prev => !prev)} className="bg-primary px-3 py-1.5 rounded-md font-bold text-xs flex items-center gap-2">
+                         Bulk Actions <i className="fas fa-chevron-down text-xs"></i>
+                      </button>
+                      {isBulkMenuOpen && (
+                          <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-10">
+                               <button onClick={handleBulkSetCategory} className="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm">Set Category</button>
+                               <button onClick={handleBulkDelete} className="w-full text-left px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm">Delete Selected</button>
+                          </div>
+                      )}
+                  </div>
               </div>
           </div>
       )
@@ -76,7 +92,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
                     <img src={product.image_url || 'https://via.placeholder.com/100'} alt={product.name} className="w-full h-full object-cover" />
                     
                     {/* Checkbox Overlay */}
-                    <div className={`absolute top-2 left-2 z-10 ${selectedIds.includes(product.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                    <div className={`absolute top-2 left-2 z-10 ${selectedIds.length > 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
                         <input 
                             type="checkbox" 
                             checked={selectedIds.includes(product.id)} 
@@ -154,7 +170,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
 
   // --- TABLE VIEW (Default) ---
   return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         <BulkActionBar />
         <div className="overflow-x-auto flex-1">
             <table className="w-full text-left">
