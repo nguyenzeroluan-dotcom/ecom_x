@@ -1,9 +1,11 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { Product, Category, CategoryData, ModalType } from '../../types';
 import { updateCategoryName } from '../../services/categoryService';
 import { uploadMediaAsset } from '../../services/mediaService';
 import { useModal } from '../../contexts/ModalContext';
-import { useProductManager } from '../../hooks/useProductManager'; // For actions context if needed, but props here
+import DataViewContainer from '../common/view-modes/DataViewContainer';
+import { ColumnDef } from '../common/view-modes/types';
 
 interface CategoryManagerProps {
   products: Product[];
@@ -14,7 +16,6 @@ interface CategoryManagerProps {
   onDeleteCategory: (id: number) => Promise<boolean>;
 }
 
-// FIX: Changed to a named export to resolve "no default export" error.
 export const CategoryManager: React.FC<CategoryManagerProps> = ({ 
   products, 
   categories: dbCategories, 
@@ -33,11 +34,9 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Aggregate Data: Merge DB categories with Product categories
+  // Aggregate Data Logic ... (Same as before)
   const aggregatedCategories: CategoryData[] = useMemo(() => {
     const map = new Map<string, CategoryData>();
-    
-    // 1. Start with DB Categories
     dbCategories.forEach(c => {
         map.set(c.name, {
             id: c.id,
@@ -49,28 +48,16 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
             is_db_persisted: true
         });
     });
-
-    // 2. Aggregate Products
     products.forEach(p => {
       const catName = p.category || 'Uncategorized';
       if (!map.has(catName)) {
-        // Found a category in products that isn't in DB
-        map.set(catName, { 
-            name: catName, 
-            count: 0, 
-            totalValue: 0, 
-            image_url: p.image_url,
-            is_db_persisted: false
-        });
+        map.set(catName, { name: catName, count: 0, totalValue: 0, image_url: p.image_url, is_db_persisted: false });
       }
-      
       const data = map.get(catName)!;
       data.count++;
       data.totalValue += (Number(p.price) * (p.stock || 0));
-      // If DB didn't provide an image, use product image
       if (!data.image_url) data.image_url = p.image_url;
     });
-
     return Array.from(map.values()).sort((a, b) => (b.is_db_persisted ? 1 : 0) - (a.is_db_persisted ? 1 : 0) || b.count - a.count);
   }, [products, dbCategories]);
 
@@ -81,12 +68,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
   };
 
   const handleEdit = (cat: CategoryData) => {
-      setFormData({
-          name: cat.name,
-          description: cat.description || '',
-          image_url: cat.image_url || ''
-      });
-      setEditId(cat.id || null); // If null, it means it's a product-derived category only
+      setFormData({ name: cat.name, description: cat.description || '', image_url: cat.image_url || '' });
+      setEditId(cat.id || null); 
       setIsEditing(true);
   };
 
@@ -94,7 +77,6 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
       if (e.target.files?.[0]) {
           setUploading(true);
           try {
-              // FIX: Use the 'public_url' property from the returned asset object
               const asset = await uploadMediaAsset(e.target.files[0]);
               setFormData(prev => ({ ...prev, image_url: asset.public_url }));
           } catch (err: any) {
@@ -107,20 +89,13 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      
       try {
           if (editId) {
-              // Update existing DB category
               const oldName = dbCategories.find(c => c.id === editId)?.name;
               await onUpdateCategory(editId, formData);
-              
-              // If name changed, update products too
-              if (oldName && oldName !== formData.name) {
-                  await updateCategoryName(oldName, formData.name);
-              }
+              if (oldName && oldName !== formData.name) await updateCategoryName(oldName, formData.name);
               openModal(ModalType.SUCCESS, { title: "Category Updated", message: "Category details updated successfully." });
           } else {
-              // Create new
               await onAddCategory(formData);
               openModal(ModalType.SUCCESS, { title: "Category Created", message: "New category added to database." });
           }
@@ -135,34 +110,69 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
           alert("This category is not in the database, it only exists on products. Edit the products to remove it.");
           return;
       }
-      
       openModal(ModalType.CONFIRM, {
           title: "Delete Category",
-          message: `Are you sure you want to delete "${cat.name}"? Products in this category will remain but might be orphaned if you don't update them.`,
+          message: `Are you sure you want to delete "${cat.name}"?`,
           isDestructive: true,
-          onConfirm: async () => {
-              if (cat.id) await onDeleteCategory(cat.id);
-          }
+          onConfirm: async () => { if (cat.id) await onDeleteCategory(cat.id); }
       });
   };
 
   const handleSync = async (cat: CategoryData) => {
-      // Convert a product-only category to a DB category
       try {
-          await onAddCategory({
-              name: cat.name,
-              description: `Auto-created from products`,
-              image_url: cat.image_url
-          });
+          await onAddCategory({ name: cat.name, description: `Auto-created from products`, image_url: cat.image_url });
           openModal(ModalType.SUCCESS, { title: "Synced", message: `Category "${cat.name}" is now managed in the database.` });
-      } catch (e: any) {
-          alert("Sync failed: " + e.message);
-      }
+      } catch (e: any) { alert("Sync failed: " + e.message); }
   };
+
+  // --- View Definitions ---
+
+  const gridRenderer = (cat: CategoryData) => (
+    <div className={`group bg-white dark:bg-slate-800 rounded-2xl shadow-sm border ${cat.is_db_persisted ? 'border-slate-200 dark:border-slate-700' : 'border-orange-200 bg-orange-50/50 dark:bg-orange-900/10'} overflow-hidden flex flex-col transition-all hover:shadow-md h-full`}>
+        <div className="h-32 bg-slate-100 dark:bg-slate-700 relative overflow-hidden">
+            <img src={cat.image_url || 'https://via.placeholder.com/400?text=No+Image'} alt={cat.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div className="absolute top-3 right-3 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button onClick={() => handleEdit(cat)} className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40"><i className="fas fa-edit"></i></button>
+                <button onClick={() => handleDelete(cat)} className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40"><i className="fas fa-trash"></i></button>
+            </div>
+            {!cat.is_db_persisted && (
+                <button onClick={() => handleSync(cat)} className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                    <i className="fas fa-exclamation-triangle"></i> Sync
+                </button>
+            )}
+        </div>
+        <div className="p-4 flex-1 flex flex-col">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{cat.name}</h3>
+            <p className="text-xs text-slate-500 line-clamp-2 mt-1 flex-grow">{cat.description || 'No description.'}</p>
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-sm">
+                <div className="text-slate-500">Products: <span className="font-bold text-slate-800 dark:text-slate-200">{cat.count}</span></div>
+                <button onClick={() => onSelectCategory(cat.name)} className="text-primary font-bold text-sm hover:underline">View</button>
+            </div>
+        </div>
+    </div>
+  );
+
+  const listRenderer = (cat: CategoryData) => (
+    <div className={`flex items-center gap-4 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border ${cat.is_db_persisted ? 'border-slate-200 dark:border-slate-700' : 'border-orange-200 dark:border-orange-900'}`}>
+        <img src={cat.image_url} alt={cat.name} className="w-16 h-16 rounded-lg object-cover bg-slate-100" />
+        <div className="flex-1">
+            <h3 className="font-bold text-slate-900 dark:text-white">{cat.name}</h3>
+            <p className="text-xs text-slate-500">{cat.description || 'No description'}</p>
+        </div>
+        <div className="flex flex-col items-end gap-1 text-sm">
+            <span className="font-bold text-slate-800 dark:text-slate-200">{cat.count} items</span>
+            <span className="text-slate-500">${cat.totalValue.toLocaleString()} value</span>
+        </div>
+        <div className="flex gap-2 ml-4">
+             <button onClick={() => handleEdit(cat)} className="p-2 text-slate-400 hover:text-blue-500"><i className="fas fa-edit"></i></button>
+             <button onClick={() => handleDelete(cat)} className="p-2 text-slate-400 hover:text-red-500"><i className="fas fa-trash"></i></button>
+        </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6 relative">
-      
       {/* Header & Toolbar */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div>
@@ -170,23 +180,21 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
             <p className="text-sm text-slate-500">{aggregatedCategories.length} total categories</p>
         </div>
         <div className="flex gap-3">
-            <button 
-                onClick={() => { resetForm(); setIsEditing(true); }}
-                className="bg-primary hover:bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-indigo-500/20 flex items-center"
-            >
+            <button onClick={() => { resetForm(); setIsEditing(true); }} className="bg-primary hover:bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center">
                 <i className="fas fa-plus mr-2"></i> Add Category
             </button>
-            <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
-                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-white dark:bg-slate-600 shadow-sm text-primary' : 'text-slate-400'}`}><i className="fas fa-th-large"></i></button>
-                <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-white dark:bg-slate-600 shadow-sm text-primary' : 'text-slate-400'}`}><i className="fas fa-list"></i></button>
+            <div className="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
+                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-400'}`}><i className="fas fa-th-large"></i></button>
+                <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-400'}`}><i className="fas fa-list"></i></button>
             </div>
         </div>
       </div>
 
-      {/* Form Modal Overlay */}
+      {/* Modal Form */}
       {isEditing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
               <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-scale-in">
+                  {/* ... (Form content identical to before) ... */}
                   <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                       <h3 className="text-lg font-bold text-slate-800 dark:text-white">{editId ? 'Edit Category' : 'New Category'}</h3>
                       <button onClick={resetForm} className="text-slate-400 hover:text-slate-600"><i className="fas fa-times"></i></button>
@@ -194,34 +202,17 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                   <form onSubmit={handleSubmit} className="p-6 space-y-4">
                       <div>
                           <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Name</label>
-                          <input 
-                            required
-                            type="text" 
-                            value={formData.name}
-                            onChange={e => setFormData({...formData, name: e.target.value})}
-                            className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 outline-none dark:bg-slate-900 dark:text-white"
-                            placeholder="e.g. Electronics"
-                          />
+                          <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 outline-none dark:bg-slate-900 dark:text-white" placeholder="e.g. Electronics" />
                       </div>
                       <div>
                           <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Description</label>
-                          <textarea 
-                            rows={3}
-                            value={formData.description}
-                            onChange={e => setFormData({...formData, description: e.target.value})}
-                            className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 outline-none resize-none dark:bg-slate-900 dark:text-white"
-                            placeholder="Optional description..."
-                          />
+                          <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 outline-none resize-none dark:bg-slate-900 dark:text-white" placeholder="Optional description..." />
                       </div>
                       <div>
                           <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Cover Image</label>
                           <div className="flex items-center gap-4">
                               {formData.image_url && <img src={formData.image_url} className="w-16 h-16 rounded-lg object-cover bg-slate-100" alt="" />}
-                              <button 
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 dark:text-slate-300"
-                              >
+                              <button type="button" onClick={() => fileInputRef.current?.click()} className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 dark:text-slate-300">
                                   {uploading ? <i className="fas fa-spinner fa-spin"></i> : 'Upload Image'}
                               </button>
                               <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
@@ -236,88 +227,19 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
           </div>
       )}
 
-      {/* Content */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {aggregatedCategories.map((cat) => (
-            <div key={cat.name} className={`group bg-white dark:bg-slate-800 rounded-2xl shadow-sm border ${cat.is_db_persisted ? 'border-slate-200 dark:border-slate-700' : 'border-orange-200 bg-orange-50/50 dark:bg-orange-900/10'} overflow-hidden flex flex-col transition-all hover:shadow-md`}>
-                
-                <div className="h-32 bg-slate-100 dark:bg-slate-700 relative overflow-hidden">
-                    <img src={cat.image_url || 'https://via.placeholder.com/400?text=No+Image'} alt={cat.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute top-3 right-3 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button onClick={() => handleEdit(cat)} className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40"><i className="fas fa-edit"></i></button>
-                        <button onClick={() => handleDelete(cat)} className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40"><i className="fas fa-trash"></i></button>
-                    </div>
-                    {!cat.is_db_persisted && (
-                        <button onClick={() => handleSync(cat)} className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse flex items-center gap-1" title="This category is not in the database. Click to add it.">
-                            <i className="fas fa-exclamation-triangle"></i> Not Synced
-                        </button>
-                    )}
-                </div>
-                
-                <div className="p-4 flex-1 flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{cat.name}</h3>
-                    <p className="text-xs text-slate-500 line-clamp-2 mt-1 flex-grow">{cat.description || 'No description.'}</p>
-                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-sm">
-                        <div className="text-slate-500">
-                            Products: <span className="font-bold text-slate-800 dark:text-slate-200">{cat.count}</span>
-                        </div>
-                        <button onClick={() => onSelectCategory(cat.name)} className="text-primary font-bold text-sm hover:underline">View</button>
-                    </div>
-                </div>
-
-            </div>
-            ))}
-        </div>
-      ) : (
-        // List View
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50 dark:bg-slate-900">
-                        <tr>
-                            <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Category</th>
-                            <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Products</th>
-                            <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Inventory Value</th>
-                            <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Status</th>
-                            <th className="px-6 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {aggregatedCategories.map(cat => (
-                            <tr key={cat.name} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <img src={cat.image_url} alt={cat.name} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
-                                        <div>
-                                            <p className="font-bold text-slate-900 dark:text-white">{cat.name}</p>
-                                            <p className="text-xs text-slate-500 w-64 truncate">{cat.description}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">{cat.count}</td>
-                                <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">${cat.totalValue.toLocaleString()}</td>
-                                <td className="px-6 py-4">
-                                    {cat.is_db_persisted ? (
-                                        <span className="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700">Synced</span>
-                                    ) : (
-                                        <button onClick={() => handleSync(cat)} className="px-2 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 flex items-center gap-1">
-                                            <i className="fas fa-sync"></i> Sync to DB
-                                        </button>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4 space-x-2 text-right">
-                                    <button onClick={() => handleEdit(cat)} className="text-slate-400 hover:text-blue-500"><i className="fas fa-edit"></i></button>
-                                    <button onClick={() => handleDelete(cat)} className="text-slate-400 hover:text-red-500"><i className="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-      )}
+      {/* Content via Generic Container */}
+      <DataViewContainer
+        data={aggregatedCategories}
+        mode={viewMode === 'grid' ? 'grid' : 'list'} // Map simple toggle to ViewMode
+        emptyMessage="No categories found."
+        gridView={{
+            renderItem: gridRenderer,
+            gridClassName: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+        }}
+        listView={{
+            renderItem: listRenderer
+        }}
+      />
     </div>
   );
 };

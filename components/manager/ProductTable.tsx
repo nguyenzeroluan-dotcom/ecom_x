@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { Product } from '../../types';
+import DataViewContainer from '../common/view-modes/DataViewContainer';
+import { ColumnDef } from '../common/view-modes/types';
 
 interface ProductTableProps {
   products: Product[];
@@ -16,50 +18,18 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
   const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
 
-  const toggleSelectAll = () => {
-      if (selectedIds.length === products.length) {
-          setSelectedIds([]);
-      } else {
-          setSelectedIds(products.map(p => p.id));
-      }
-  };
-
   const toggleSelect = (id: string | number) => {
-      setSelectedIds(prev => 
-          prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-      );
+      setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
-  const handleBulkDelete = () => {
-      if (onBulkDelete) {
-        onBulkDelete(selectedIds);
-        setSelectedIds([]); // Clear selection after initiating action
-        setIsBulkMenuOpen(false);
-      }
+  const toggleSelectAll = () => {
+      setSelectedIds(selectedIds.length === products.length ? [] : products.map(p => p.id));
   };
-  
-  const handleBulkSetCategory = () => {
-      alert(`Feature in development: Set category for ${selectedIds.length} items.`);
-      setIsBulkMenuOpen(false);
-  }
-
-  if (loading) {
-     return <div className="flex justify-center p-12"><i className="fas fa-spinner fa-spin text-2xl text-primary"></i></div>;
-  }
-
-  if (products.length === 0) {
-     return (
-         <div className="flex flex-col items-center justify-center p-12 text-slate-400">
-            <i className="fas fa-box-open text-4xl mb-2"></i>
-            <p>No products found.</p>
-         </div>
-     );
-  }
 
   // --- Bulk Action Bar ---
   const BulkActionBar = () => (
       selectedIds.length > 0 && (
-          <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between text-sm animate-slide-up-toast sticky top-0 z-20 shadow-md rounded-t-xl">
+          <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between text-sm animate-slide-up-toast sticky top-0 z-20 shadow-md rounded-t-xl mb-[-10px]">
               <span className="font-bold">{selectedIds.length} selected</span>
               <div className="flex items-center gap-4">
                   <button onClick={() => setSelectedIds([])} className="text-slate-300 hover:text-white transition-colors text-xs">Clear</button>
@@ -69,8 +39,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
                       </button>
                       {isBulkMenuOpen && (
                           <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-10">
-                               <button onClick={handleBulkSetCategory} className="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm">Set Category</button>
-                               <button onClick={handleBulkDelete} className="w-full text-left px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm">Delete Selected</button>
+                               <button onClick={() => { onBulkDelete(selectedIds); setIsBulkMenuOpen(false); setSelectedIds([]); }} className="w-full text-left px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm">Delete Selected</button>
                           </div>
                       )}
                   </div>
@@ -79,190 +48,125 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
       )
   );
 
-  // --- GRID VIEW ---
-  if (viewMode === 'grid') {
-    return (
-      <div className="relative">
-          <BulkActionBar />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-4">
-            {products.map(product => (
-            <div key={product.id} className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border overflow-hidden flex flex-col ${selectedIds.includes(product.id) ? 'border-primary ring-2 ring-primary/20' : 'border-slate-100 dark:border-slate-700'}`}>
-                <div className="aspect-square relative group cursor-pointer" onClick={() => onView(product)}>
-                    <img src={product.image_url || 'https://via.placeholder.com/100'} alt={product.name} className="w-full h-full object-cover" />
-                    
-                    {/* Checkbox Overlay */}
-                    <div className={`absolute top-2 left-2 z-10 ${selectedIds.length > 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`} onClick={e => e.stopPropagation()}>
-                        <input 
-                            type="checkbox" 
-                            checked={selectedIds.includes(product.id)} 
-                            onChange={() => toggleSelect(product.id)}
-                            className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                        />
-                    </div>
-                    
-                    {/* Hover Overlay with View Button */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button className="bg-white/90 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm shadow-lg backdrop-blur-sm">View Details</button>
-                    </div>
-                    
-                    {(product.stock || 0) < 5 && (
-                    <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">Low Stock</span>
-                    )}
-                </div>
-                <div className="p-4 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <h3 className="font-bold text-slate-900 dark:text-white truncate w-32 cursor-pointer hover:text-primary" onClick={() => onView(product)}>{product.name}</h3>
-                            <p className="text-xs text-slate-500 font-mono">{product.sku || '-'}</p>
-                        </div>
-                        <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300">{product.category}</span>
-                    </div>
-                    
-                    <div className="mt-auto pt-4 flex justify-between items-center">
-                    <span className="font-bold text-primary">${Number(product.price).toFixed(2)}</span>
-                    <div className="flex gap-2">
-                        <button onClick={() => onEdit(product)} className="p-2 bg-slate-100 dark:bg-slate-700 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors"><i className="fas fa-edit"></i></button>
-                        <button onClick={() => onDelete(product.id)} className="p-2 bg-slate-100 dark:bg-slate-700 rounded hover:bg-red-50 hover:text-red-600 transition-colors"><i className="fas fa-trash"></i></button>
-                    </div>
-                    </div>
-                </div>
-            </div>
-            ))}
+  // --- 1. Table Configuration ---
+  const tableColumns: ColumnDef<Product>[] = [
+    {
+      header: '',
+      className: 'w-10',
+      render: (p) => (
+        <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={(e) => { e.stopPropagation(); toggleSelect(p.id); }} className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
+      )
+    },
+    {
+      header: 'Product',
+      render: (p) => (
+        <div className="flex items-center gap-3">
+           <div className="h-10 w-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 relative">
+              <img className="h-full w-full object-cover" src={p.image_url} alt="" />
+           </div>
+           <div className="font-medium text-sm text-slate-900 dark:text-white hover:text-primary cursor-pointer" onClick={() => onView(p)}>{p.name}</div>
         </div>
+      )
+    },
+    { header: 'SKU', accessorKey: 'sku', className: 'text-xs font-mono text-slate-500' },
+    { 
+      header: 'Category', 
+      render: (p) => <span className="px-2 py-1 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">{p.category}</span>
+    },
+    { 
+      header: 'Stock', 
+      render: (p) => {
+        const stock = p.stock || 0;
+        if(stock === 0) return <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">Out of Stock</span>;
+        if(stock < 5) return <span className="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded">Low ({stock})</span>;
+        return <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{stock}</span>;
+      }
+    },
+    { header: 'Price', render: (p) => <span className="font-bold text-slate-700 dark:text-slate-200">${Number(p.price).toFixed(2)}</span> },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      render: (p) => (
+        <div className="flex justify-end gap-2">
+           <button onClick={(e) => {e.stopPropagation(); onView(p)}} className="p-1.5 text-slate-400 hover:text-primary"><i className="fas fa-eye"></i></button>
+           <button onClick={(e) => {e.stopPropagation(); onEdit(p)}} className="p-1.5 text-slate-400 hover:text-blue-500"><i className="fas fa-edit"></i></button>
+           <button onClick={(e) => {e.stopPropagation(); onDelete(p.id)}} className="p-1.5 text-slate-400 hover:text-red-500"><i className="fas fa-trash"></i></button>
+        </div>
+      )
+    }
+  ];
+
+  // --- 2. Grid Card Renderer ---
+  const renderGridItem = (product: Product) => (
+    <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border overflow-hidden flex flex-col h-full transition-all ${selectedIds.includes(product.id) ? 'border-primary ring-2 ring-primary/20' : 'border-slate-100 dark:border-slate-700'}`}>
+      <div className="aspect-square relative group cursor-pointer" onClick={() => onView(product)}>
+          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+          <div className="absolute top-2 left-2 z-10" onClick={e => e.stopPropagation()}>
+              <input type="checkbox" checked={selectedIds.includes(product.id)} onChange={() => toggleSelect(product.id)} className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer" />
+          </div>
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <button className="bg-white/90 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm shadow-lg">View</button>
+          </div>
       </div>
-    );
-  }
+      <div className="p-4 flex-1 flex flex-col">
+          <div className="flex justify-between items-start mb-2">
+              <h3 className="font-bold text-slate-900 dark:text-white truncate flex-1 mr-2" onClick={() => onView(product)}>{product.name}</h3>
+              <span className="text-[10px] px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300">{product.category}</span>
+          </div>
+          <div className="mt-auto flex justify-between items-center">
+             <span className="font-bold text-primary">${Number(product.price).toFixed(2)}</span>
+             <div className="flex gap-1">
+                <button onClick={(e) => {e.stopPropagation(); onEdit(product)}} className="p-2 text-slate-400 hover:text-blue-500"><i className="fas fa-edit"></i></button>
+                <button onClick={(e) => {e.stopPropagation(); onDelete(product.id)}} className="p-2 text-slate-400 hover:text-red-500"><i className="fas fa-trash"></i></button>
+             </div>
+          </div>
+      </div>
+    </div>
+  );
 
-  // --- LIST VIEW ---
-  if (viewMode === 'list') {
-     return (
-       <div className="relative">
-           <BulkActionBar />
-           <div className="space-y-3 p-4">
-            {products.map(product => (
-            <div key={product.id} className={`bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border flex items-center gap-4 ${selectedIds.includes(product.id) ? 'border-primary bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-100 dark:border-slate-700'}`}>
-                <input 
-                    type="checkbox" 
-                    checked={selectedIds.includes(product.id)} 
-                    onChange={() => toggleSelect(product.id)}
-                    className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                />
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => onView(product)}>
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onView(product)}>
-                    <h4 className="font-bold text-slate-900 dark:text-white truncate hover:text-primary">{product.name}</h4>
-                    <p className="text-xs text-slate-500 font-mono mb-1">SKU: {product.sku || 'N/A'}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{product.description}</p>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                    <span className="font-bold text-slate-900 dark:text-white">${Number(product.price).toFixed(2)}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ (product.stock||0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }`}>
-                        {(product.stock||0) > 0 ? `${product.stock} in stock` : 'Out of Stock'}
-                    </span>
-                </div>
-                <div className="flex gap-2 border-l border-slate-100 dark:border-slate-700 pl-4">
-                    <button onClick={() => onView(product)} className="text-slate-400 hover:text-primary" title="View Details"><i className="fas fa-eye"></i></button>
-                    <button onClick={() => onEdit(product)} className="text-slate-400 hover:text-blue-500" title="Edit"><i className="fas fa-edit"></i></button>
-                    <button onClick={() => onDelete(product.id)} className="text-slate-400 hover:text-red-500" title="Delete"><i className="fas fa-trash"></i></button>
-                </div>
-            </div>
-            ))}
+  // --- 3. List Item Renderer ---
+  const renderListItem = (product: Product) => (
+    <div className={`bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border flex items-center gap-4 ${selectedIds.includes(product.id) ? 'border-primary bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-100 dark:border-slate-700'}`}>
+        <input type="checkbox" checked={selectedIds.includes(product.id)} onChange={() => toggleSelect(product.id)} className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer" />
+        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => onView(product)}>
+            <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
         </div>
-       </div>
-     );
-  }
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onView(product)}>
+            <h4 className="font-bold text-slate-900 dark:text-white truncate hover:text-primary">{product.name}</h4>
+            <p className="text-xs text-slate-500 font-mono">SKU: {product.sku || 'N/A'}</p>
+        </div>
+        <div className="flex flex-col items-end gap-1 min-w-[80px]">
+            <span className="font-bold text-slate-900 dark:text-white">${Number(product.price).toFixed(2)}</span>
+            <span className="text-xs text-slate-500">{product.stock} units</span>
+        </div>
+        <div className="flex gap-2 border-l border-slate-100 dark:border-slate-700 pl-4">
+            <button onClick={() => onView(product)} className="text-slate-400 hover:text-primary"><i className="fas fa-eye"></i></button>
+            <button onClick={() => onEdit(product)} className="text-slate-400 hover:text-blue-500"><i className="fas fa-edit"></i></button>
+            <button onClick={() => onDelete(product.id)} className="text-slate-400 hover:text-red-500"><i className="fas fa-trash"></i></button>
+        </div>
+    </div>
+  );
 
-  // --- TABLE VIEW (Default) ---
   return (
-      <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="relative">
         <BulkActionBar />
-        <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left">
-            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
-                <tr>
-                <th className="px-6 py-3 w-10">
-                    <input 
-                        type="checkbox" 
-                        checked={products.length > 0 && selectedIds.length === products.length}
-                        onChange={toggleSelectAll}
-                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                    />
-                </th>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">SKU</th>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {products.map((product) => {
-                    const stock = product.stock ?? 0;
-                    const isLowStock = stock < 5;
-                    const isOutOfStock = stock === 0;
-
-                    return (
-                    <tr key={product.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group ${selectedIds.includes(product.id) ? 'bg-indigo-50 dark:bg-indigo-900/10' : ''}`}>
-                        <td className="px-6 py-4">
-                            <input 
-                                type="checkbox" 
-                                checked={selectedIds.includes(product.id)} 
-                                onChange={() => toggleSelect(product.id)}
-                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                            />
-                        </td>
-                        <td className="px-6 py-4 cursor-pointer" onClick={() => onView(product)}>
-                        <div className="flex items-center">
-                            <div className="h-10 w-10 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 mr-3 border border-slate-200 dark:border-slate-600 relative">
-                            <img className={`h-full w-full object-cover ${isOutOfStock ? 'grayscale opacity-75' : ''}`} src={product.image_url || 'https://via.placeholder.com/100'} alt="" />
-                            </div>
-                            <div>
-                            <div className={`text-sm font-medium hover:text-primary transition-colors ${isOutOfStock ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>{product.name}</div>
-                            </div>
-                        </div>
-                        </td>
-                        <td className="px-6 py-4 text-xs font-mono text-slate-500">{product.sku || '-'}</td>
-                        <td className="px-6 py-4">
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                            {product.category}
-                        </span>
-                        </td>
-                        <td className="px-6 py-4">
-                        <div className="flex items-center">
-                            {isOutOfStock ? (
-                                <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold uppercase">Out of Stock</span>
-                            ) : isLowStock ? (
-                                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-bold flex items-center">
-                                <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mr-1.5 animate-pulse"></span>
-                                {stock} left
-                                </span>
-                            ) : (
-                                <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{stock}</span>
-                            )}
-                        </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-200">
-                        ${Number(product.price).toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 text-right space-x-2">
-                        <button onClick={(e) => {e.stopPropagation(); onView(product)}} className="text-slate-400 hover:text-primary transition-colors p-1" title="View Details">
-                            <i className="fas fa-eye"></i>
-                        </button>
-                        <button onClick={(e) => {e.stopPropagation(); onEdit(product)}} className="text-slate-400 hover:text-blue-500 transition-colors p-1" title="Edit">
-                            <i className="fas fa-edit"></i>
-                        </button>
-                        <button onClick={(e) => {e.stopPropagation(); onDelete(product.id)}} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete">
-                            <i className="fas fa-trash"></i>
-                        </button>
-                        </td>
-                    </tr>
-                    );
-                })}
-            </tbody>
-            </table>
-        </div>
+        <DataViewContainer 
+          data={products}
+          isLoading={loading}
+          mode={viewMode}
+          emptyMessage="No products found matching your criteria."
+          onItemClick={(item) => onView(item)} // General click handler
+          gridView={{
+            renderItem: renderGridItem,
+            gridClassName: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4'
+          }}
+          listView={{
+            renderItem: renderListItem
+          }}
+          tableView={{
+            columns: tableColumns
+          }}
+        />
       </div>
   );
 };
