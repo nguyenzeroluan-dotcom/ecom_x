@@ -42,19 +42,27 @@ const DataViewContainer = <T,>({
     );
   }
 
-  switch (mode) {
-    case 'grid':
-      if (!gridView) return null;
-      return <GridView data={data} onItemClick={onItemClick} {...gridView} />;
-    case 'list':
-      if (!listView) return null;
-      return <ListView data={data} onItemClick={onItemClick} {...listView} />;
-    case 'table':
-      if (!tableView) return null;
-      return <TableView data={data} onItemClick={onItemClick} {...tableView} />;
-    default:
-      return null;
-  }
+  // Standardize modes for the generic container
+  const renderMode = () => {
+      // We map 'flip' and 'compact' to 'grid' or 'list' structurally if using standard renderers,
+      // BUT if the parent passes custom renderers via gridView/listView props, those will handle the specific layout.
+      // Here we assume standard Table/List/Grid structural switching.
+      switch (mode) {
+        case 'table':
+          if (!tableView) return null;
+          return <TableView data={data} onItemClick={onItemClick} {...tableView} />;
+        case 'list':
+          if (!listView) return null;
+          return <ListView data={data} onItemClick={onItemClick} {...listView} />;
+        case 'grid':
+        default:
+          // Default catch-all for 'grid', 'flip', 'compact' usually rendered via grid structure
+          if (!gridView) return null;
+          return <GridView data={data} onItemClick={onItemClick} {...gridView} />;
+      }
+  };
+
+  return renderMode();
 };
 
 export default DataViewContainer;

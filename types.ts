@@ -188,7 +188,7 @@ export interface PreferencesContextType {
 }
 
 export type ManagerViewMode = 'table' | 'grid' | 'list';
-export type MarketViewMode = 'grid' | 'list';
+export type MarketViewMode = 'grid' | 'list' | 'compact' | 'flip';
 
 export type ManagerTab = 'DASHBOARD' | 'ORDERS' | 'PRODUCTS' | 'EBOOKS' | 'CATEGORIES' | 'INVENTORY' | 'MEDIA' | 'FORECAST' | 'USERS' | 'ROLES' | 'DATABASE';
 
