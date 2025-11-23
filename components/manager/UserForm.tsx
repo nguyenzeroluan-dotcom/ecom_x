@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, UserRole } from '../../types';
 import { uploadMediaAsset } from '../../services/mediaService';
@@ -8,6 +9,7 @@ interface UserFormProps {
   onCancel: () => void;
   isEditing: boolean;
   isLoading: boolean;
+  roles: string[];
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -15,12 +17,13 @@ const UserForm: React.FC<UserFormProps> = ({
   onSubmit,
   onCancel,
   isEditing,
-  isLoading
+  isLoading,
+  roles
 }) => {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    role: 'customer' as UserRole,
+    role: 'customer' as UserRole | string,
     phone: '',
     city: '',
     avatar_url: ''
@@ -39,9 +42,11 @@ const UserForm: React.FC<UserFormProps> = ({
         avatar_url: initialData.avatar_url || ''
       });
     } else {
-      setFormData({ email: '', full_name: '', role: 'customer', phone: '', city: '', avatar_url: '' });
+      // Default to customer if available, otherwise first role
+      const defaultRole = roles.includes('customer') ? 'customer' : (roles[0] || '');
+      setFormData({ email: '', full_name: '', role: defaultRole, phone: '', city: '', avatar_url: '' });
     }
-  }, [initialData]);
+  }, [initialData, roles]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -52,7 +57,6 @@ const UserForm: React.FC<UserFormProps> = ({
     if (e.target.files?.[0]) {
         setUploading(true);
         try {
-            // FIX: Use the 'public_url' property from the returned asset object
             const asset = await uploadMediaAsset(e.target.files[0], undefined, 'avatars');
             setFormData(prev => ({ ...prev, avatar_url: asset.public_url }));
         } catch (err: any) {
@@ -65,7 +69,7 @@ const UserForm: React.FC<UserFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    await onSubmit(formData as Partial<UserProfile>);
   };
 
   return (
@@ -136,18 +140,23 @@ const UserForm: React.FC<UserFormProps> = ({
                 name="role" 
                 value={formData.role} 
                 onChange={handleInputChange} 
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:outline-none bg-white dark:bg-slate-900 dark:text-white mb-2"
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:outline-none bg-white dark:bg-slate-900 dark:text-white mb-2 capitalize"
             >
-                <option value="customer">Customer</option>
-                <option value="manager">Manager</option>
-                <option value="admin">Admin</option>
+                {roles.length > 0 ? (
+                    roles.map(role => (
+                        <option key={role} value={role}>{role}</option>
+                    ))
+                ) : (
+                    <option value="customer">Customer (Default)</option>
+                )}
             </select>
             <div className="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-2">
                 <i className="fas fa-info-circle mt-0.5"></i>
                 <p>
-                    {formData.role === 'admin' && "Full system access. Can manage users, products, and settings."}
-                    {formData.role === 'manager' && "Store management access. Can edit products/orders but cannot manage users."}
-                    {formData.role === 'customer' && "Standard access. Can only view products and manage their own personal orders."}
+                    {formData.role === 'admin' ? "Full system access. Can manage users, products, and settings." : 
+                     formData.role === 'manager' ? "Store management access. Can edit products/orders but cannot manage users." : 
+                     formData.role === 'customer' ? "Standard access. Can only view products and manage their own personal orders." :
+                     `Assigns permissions associated with the '${formData.role}' role.`}
                 </p>
             </div>
           </div>
