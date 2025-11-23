@@ -17,6 +17,7 @@ import { DEMO_ADMIN_SUPPORT_SQL } from '../../data/15_demo_admin_support';
 import { LIBRARY_RLS_FIX_SQL } from '../../data/16_library_rls_fix';
 import { FIX_FULFILLMENT_RLS_SQL } from '../../data/17_fix_fulfillment_rls';
 import { ORDER_ARCHIVING_SQL } from '../../data/20_order_archiving';
+import { WISHLIST_SETUP_SQL } from '../../data/21_wishlist_setup';
 import { useNotification } from '../../contexts/NotificationContext';
 
 interface ScriptItemProps {
@@ -145,7 +146,7 @@ const SqlViewer: React.FC = () => {
       label: 'Gallery Fix'
     },
     {
-      title: '9. Video URL Support (New)',
+      title: '9. Video URL Support',
       description: 'Adds video_url column to products.',
       sql: VIDEO_URL_SUPPORT_SQL,
       color: 'text-indigo-400',
@@ -174,14 +175,14 @@ const SqlViewer: React.FC = () => {
     },
     {
         title: '13. Admin Library Access',
-        description: 'Allow Admins to fulfill digital orders (write to user library).',
+        description: 'Allow Admins to fulfill digital orders.',
         sql: ADMIN_LIBRARY_ACCESS_SQL,
         color: 'text-amber-400',
         label: 'Admin Access'
     },
     {
         title: '14. Demo Admin Support',
-        description: 'Seeds the Demo User into the database and fixes Foreign Key constraints.',
+        description: 'Seeds the Demo User into the database.',
         sql: DEMO_ADMIN_SUPPORT_SQL,
         color: 'text-gray-400',
         label: 'Demo Seed'
@@ -201,11 +202,18 @@ const SqlViewer: React.FC = () => {
         label: 'Insert Fix'
     },
     {
-        title: '17. Order Archiving (New)',
+        title: '17. Order Archiving',
         description: 'Tables for "Soft Delete" functionality.',
         sql: ORDER_ARCHIVING_SQL,
         color: 'text-pink-500',
         label: 'Archiving'
+    },
+    {
+        title: '18. Wishlist Sync (New)',
+        description: 'Table for persistent wishlist storage.',
+        sql: WISHLIST_SETUP_SQL,
+        color: 'text-violet-400',
+        label: 'Wishlist'
     }
   ];
 

@@ -17,6 +17,7 @@ import { DEMO_ADMIN_SUPPORT_SQL } from '../data/15_demo_admin_support';
 import { LIBRARY_RLS_FIX_SQL } from '../data/16_library_rls_fix';
 import { FIX_FULFILLMENT_RLS_SQL } from '../data/17_fix_fulfillment_rls';
 import { ORDER_ARCHIVING_SQL } from '../data/20_order_archiving';
+import { WISHLIST_SETUP_SQL } from '../data/21_wishlist_setup';
 
 // Combined SQL for Database Setup
 export const DATABASE_SETUP_SQL = 
@@ -37,4 +38,5 @@ export const DATABASE_SETUP_SQL =
     DEMO_ADMIN_SUPPORT_SQL + '\n\n' +
     LIBRARY_RLS_FIX_SQL + '\n\n' +
     FIX_FULFILLMENT_RLS_SQL + '\n\n' +
-    ORDER_ARCHIVING_SQL;
+    ORDER_ARCHIVING_SQL + '\n\n' +
+    WISHLIST_SETUP_SQL;
