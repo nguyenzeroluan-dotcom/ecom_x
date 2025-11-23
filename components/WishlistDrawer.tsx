@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { usePreferences } from '../contexts/PreferencesContext';
 import { useCart } from '../contexts/CartContext';
@@ -27,7 +28,7 @@ const WishlistDrawer: React.FC = () => {
   return (
     <>
       <div className="fixed inset-0 bg-slate-900/40 z-[60] backdrop-blur-sm animate-fade-in" onClick={toggleWishlistDrawer}></div>
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-900 z-[70] shadow-2xl transform transition-transform duration-300 flex flex-col animate-slide-in-right border-l border-slate-100 dark:border-slate-800">
+      <div className="fixed inset-y-0 right-0 w-full md:max-w-md bg-white dark:bg-slate-900 z-[70] shadow-2xl transform transition-transform duration-300 flex flex-col animate-slide-in-right border-l border-slate-100 dark:border-slate-800">
         
         {/* Header */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
@@ -41,7 +42,7 @@ const WishlistDrawer: React.FC = () => {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar pb-24 md:pb-6">
           {wishlistItems.length === 0 ? (
              <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
                 <i className="far fa-heart text-5xl opacity-20"></i>

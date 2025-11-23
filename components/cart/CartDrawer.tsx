@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../../contexts/CartContext';
 import { ViewState, Product } from '../../types';
@@ -50,7 +51,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ setView }) => {
   return (
     <>
       <div className="fixed inset-0 bg-slate-900/40 z-[60] backdrop-blur-sm animate-fade-in" onClick={toggleCart}></div>
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-900 z-[70] shadow-2xl transform transition-transform duration-300 flex flex-col animate-slide-in-right border-l border-slate-100 dark:border-slate-800">
+      <div className="fixed inset-y-0 right-0 w-full md:max-w-md bg-white dark:bg-slate-900 z-[70] shadow-2xl transform transition-transform duration-300 flex flex-col animate-slide-in-right border-l border-slate-100 dark:border-slate-800">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center font-display">
             Your Cart <span className="ml-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs px-2 py-1 rounded-full">{items.reduce((acc, i) => acc + i.quantity, 0)} items</span>
@@ -77,7 +78,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ setView }) => {
            </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar pb-24 md:pb-6">
           {items.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-6 text-center animate-fade-in">
               <div className="w-32 h-32 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center relative">
@@ -160,7 +161,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ setView }) => {
         </div>
 
         {items.length > 0 && (
-          <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-4">
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-4 safe-pb-mobile">
              <div className="space-y-2">
                 <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 text-sm">
                   <span>Subtotal</span>

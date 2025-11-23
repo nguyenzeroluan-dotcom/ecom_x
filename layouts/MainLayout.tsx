@@ -15,7 +15,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, currentView, setView,
   const isReaderView = currentView === ViewState.READER;
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 font-sans">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 font-sans pb-20 md:pb-0">
       {!isManagerView && !isReaderView && <Header currentView={currentView} setView={setView} toggleCommandPalette={toggleCommandPalette} />}
       <main className="transition-opacity duration-300 ease-in-out">
         {children}
