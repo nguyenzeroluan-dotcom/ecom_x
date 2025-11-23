@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Product, ModalType } from '../../types';
 import { useModal } from '../../contexts/ModalContext';
 import { generateProductDescription } from '../../services/geminiService';
@@ -36,7 +36,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     description: '',
     image_url: '',
     stock: '10',
-    collection_id: undefined as number | undefined,
+    collection_id: null as number | null, // Explicitly null for DB compatibility
     is_digital: false,
     digital_content: ''
   });
@@ -47,10 +47,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
   
   // URL Input State
-  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [isUrlMode, setIsUrlMode] = useState(false);
   const [urlInputValue, setUrlInputValue] = useState('');
 
-  const magicInputRef = React.useRef<HTMLInputElement>(null);
+  const magicInputRef = useRef<HTMLInputElement>(null);
+  
+  // Track the ID to prevent resetting form when other props (like categories) change reference
+  const activeId = initialData?.id || 'new';
 
   useEffect(() => {
     if (initialData) {
@@ -62,7 +65,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         description: initialData.description,
         image_url: initialData.image_url,
         stock: initialData.stock !== undefined ? initialData.stock.toString() : '10',
-        collection_id: initialData.collection_id,
+        collection_id: initialData.collection_id || null,
         is_digital: initialData.is_digital || false,
         digital_content: initialData.digital_content || ''
       });
@@ -76,11 +79,26 @@ const ProductForm: React.FC<ProductFormProps> = ({
           setPreviewGallery([]);
       }
     } else {
-      setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20', collection_id: undefined, is_digital: false, digital_content: '' });
+      // Reset to defaults for new product
+      setFormData({ 
+          name: '', 
+          sku: '', 
+          price: '', 
+          category: categories[0] || 'Home', 
+          description: '', 
+          image_url: '', 
+          stock: '20', 
+          collection_id: null, 
+          is_digital: false, 
+          digital_content: '' 
+      });
       setGalleryImageCount(0);
       setPreviewGallery([]);
     }
-  }, [initialData, categories]);
+    // CRITICAL FIX: Do NOT include 'categories' in dependency array.
+    // It changes reference on every parent render, causing form reset.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, initialData]); 
 
   // Auto-detect digital category
   useEffect(() => {
@@ -120,7 +138,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               setFormData(prev => ({
                   ...prev,
                   image_url: media.imageUrl,
-                  collection_id: media.collectionId === null ? undefined : media.collectionId,
+                  collection_id: media.collectionId,
               }));
               
               // Update preview state immediately
@@ -136,26 +154,36 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleUrlSubmit = () => {
       if (urlInputValue.trim()) {
-          setFormData(prev => ({ ...prev, image_url: urlInputValue.trim() }));
-          // Don't clear collection_id here unless explicit, 
-          // user might want a custom cover URL for a gallery product
-          setShowUrlInput(false);
+          setFormData(prev => ({ 
+              ...prev, 
+              image_url: urlInputValue.trim(),
+              collection_id: null // Custom URL overrides gallery connection
+          }));
+          setPreviewGallery([]);
+          setGalleryImageCount(0);
+          setIsUrlMode(false);
           setUrlInputValue('');
       }
+  };
+
+  const handleRemoveMedia = () => {
+      setFormData(prev => ({ ...prev, image_url: '', collection_id: null }));
+      setPreviewGallery([]);
+      setGalleryImageCount(0);
   };
 
   const handleMagicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const data = await onMagicAnalysis(e.target.files[0]);
       if (data) {
-        setFormData({
-          ...formData,
+        setFormData(prev => ({
+          ...prev,
           name: data.name || '',
           price: data.price?.toString() || '',
           category: data.category || categories[0],
           description: data.description || '',
           image_url: data.image_url || '',
-        });
+        }));
         setTimeout(() => generateSku(), 100);
       }
       if (magicInputRef.current) magicInputRef.current.value = '';
@@ -189,12 +217,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
       image_url: formData.image_url || 'https://via.placeholder.com/400',
       category: formData.category,
       stock: parseInt(formData.stock) || 0,
-      collection_id: formData.collection_id,
+      collection_id: formData.collection_id || undefined, // Pass undefined to skip update if not set? No, explicit null is better for clearing.
       is_digital: formData.is_digital,
       digital_content: formData.digital_content
     });
+    
     if (success && !isEditing) {
-      setFormData({ name: '', sku: '', price: '', category: categories[0] || 'Home', description: '', image_url: '', stock: '20', collection_id: undefined, is_digital: false, digital_content: '' });
+      // Reset form for next add
+      setFormData({ 
+          name: '', 
+          sku: '', 
+          price: '', 
+          category: categories[0] || 'Home', 
+          description: '', 
+          image_url: '', 
+          stock: '20', 
+          collection_id: null, 
+          is_digital: false, 
+          digital_content: '' 
+      });
       setIsCustomCategory(false);
       setGalleryImageCount(0);
       setPreviewGallery([]);
@@ -341,88 +382,86 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </div>
 
            {/* Product Media Section */}
-           <div className="bg-slate-50 dark:bg-slate-700/40 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                <div className="flex justify-between items-center mb-3">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Product Media</label>
-                    <div className="flex gap-2">
-                        <button 
-                            type="button" 
-                            onClick={() => setShowUrlInput(!showUrlInput)} 
-                            className="text-xs text-slate-500 hover:text-primary font-medium flex items-center gap-1 bg-white dark:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600"
-                        >
-                            <i className="fas fa-link"></i> {showUrlInput ? 'Cancel URL' : 'Paste URL'}
-                        </button>
-                    </div>
-                </div>
-
-                {showUrlInput && (
-                    <div className="mb-4 flex gap-2 animate-fade-in">
-                        <input 
-                            type="text" 
-                            value={urlInputValue} 
-                            onChange={(e) => setUrlInputValue(e.target.value)}
-                            placeholder="https://example.com/image.jpg"
-                            className="flex-1 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none dark:bg-slate-900 dark:text-white"
-                        />
-                        <button type="button" onClick={handleUrlSubmit} className="px-3 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-indigo-600">Apply</button>
-                    </div>
-                )}
-
-                <div className="flex flex-col gap-4">
-                    <div className="flex gap-4 items-start">
-                        {/* Main Cover Image Preview */}
-                        <div className="w-32 h-32 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0 flex items-center justify-center relative group shadow-sm">
-                            {formData.image_url ? (
-                                <>
-                                    <img src={formData.image_url} alt="Cover" className="w-full h-full object-cover" />
-                                    {formData.collection_id && (
-                                        <div className="absolute bottom-1 right-1 bg-slate-900/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                                            <i className="fas fa-layer-group"></i> Gallery
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="flex flex-col items-center text-slate-400">
-                                    <i className="fas fa-image text-2xl mb-1"></i>
-                                    <span className="text-[10px]">No Cover</span>
+           <div className="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Product Media</label>
+                
+                <div className="flex gap-4 items-start">
+                    {/* Main Media Card */}
+                    <div className="relative w-32 h-32 bg-white dark:bg-slate-800 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden group shadow-sm transition-all hover:border-primary">
+                        {formData.image_url ? (
+                            <>
+                                <img src={formData.image_url} alt="Cover" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                    <button type="button" onClick={openMediaLibrary} className="text-white text-xs font-bold bg-white/20 px-2 py-1 rounded hover:bg-white/30">Change</button>
+                                    <button type="button" onClick={handleRemoveMedia} className="text-red-300 text-xs font-bold hover:text-red-100">Remove</button>
                                 </div>
-                            )}
-                            <div 
-                                onClick={openMediaLibrary} 
-                                className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                            >
-                                <i className="fas fa-pen mb-1"></i>
-                                <span className="text-xs font-bold">Change</span>
+                                {formData.collection_id && (
+                                    <div className="absolute bottom-1 right-1 bg-primary/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                                        Gallery
+                                    </div>
+                                )}
+                            </>
+                        ) : isUrlMode ? (
+                            <div className="p-2 w-full h-full flex flex-col justify-center gap-2 animate-fade-in">
+                                <input 
+                                    type="text"
+                                    autoFocus 
+                                    placeholder="https://..."
+                                    className="w-full text-[10px] p-1 rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:outline-none focus:border-primary"
+                                    value={urlInputValue}
+                                    onChange={(e) => setUrlInputValue(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
+                                />
+                                <div className="flex gap-1">
+                                    <button type="button" onClick={handleUrlSubmit} className="flex-1 bg-primary text-white text-[10px] rounded py-1 font-bold">OK</button>
+                                    <button type="button" onClick={() => setIsUrlMode(false)} className="flex-1 bg-slate-200 text-slate-600 text-[10px] rounded py-1">Cancel</button>
+                                </div>
                             </div>
-                        </div>
-
-                        {/* Controls */}
-                        <div className="flex flex-col justify-center gap-3 py-2">
-                             <button type="button" onClick={openMediaLibrary} className="px-4 py-2 bg-white dark:bg-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-600 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-600 shadow-sm text-left transition-colors">
-                                <i className="fas fa-folder-open mr-2 text-yellow-500"></i> Select from Library
-                            </button>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] leading-relaxed">
-                                Choose a cover image or assign a full gallery collection.
-                            </p>
-                        </div>
+                        ) : (
+                            <div className="flex flex-col items-center text-slate-400 gap-2">
+                                <button type="button" onClick={openMediaLibrary} className="flex flex-col items-center hover:text-primary transition-colors">
+                                    <i className="fas fa-image text-2xl"></i>
+                                    <span className="text-[10px] font-bold mt-1">Library</span>
+                                </button>
+                                <div className="w-full h-px bg-slate-200 dark:bg-slate-600"></div>
+                                <button type="button" onClick={() => setIsUrlMode(true)} className="text-[10px] font-bold hover:text-primary transition-colors">
+                                    Paste URL
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Gallery Preview Strip */}
-                    {previewGallery.length > 0 && (
-                        <div className="mt-2 animate-fade-in">
-                            <p className="text-xs font-bold text-slate-500 uppercase mb-2 flex justify-between">
-                                <span>Gallery Preview ({galleryImageCount})</span>
-                                {formData.collection_id && <span className="text-primary">Linked Collection #{formData.collection_id}</span>}
-                            </p>
-                            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-                                {previewGallery.map((img, idx) => (
-                                    <div key={idx} className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden border border-slate-200 dark:border-slate-600 relative group bg-slate-200 dark:bg-slate-800">
-                                        <img src={img} className="w-full h-full object-cover" alt={`Gallery ${idx}`} />
+                    {/* Context / Preview Area */}
+                    <div className="flex-1 flex flex-col justify-center min-h-[128px]">
+                        {formData.image_url ? (
+                            <div className="animate-fade-in">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm font-bold text-slate-800 dark:text-white">Cover Image Set</span>
+                                    <i className="fas fa-check-circle text-green-500"></i>
+                                </div>
+                                {previewGallery.length > 0 ? (
+                                    <div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                                            Linked Gallery: <span className="font-bold text-primary">{galleryImageCount} images</span>
+                                        </p>
+                                        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar max-w-[200px] sm:max-w-xs">
+                                            {previewGallery.map((img, idx) => (
+                                                <img key={idx} src={img} alt="" className="w-10 h-10 rounded object-cover border border-slate-200 dark:border-slate-700 bg-slate-100 flex-shrink-0" />
+                                            ))}
+                                        </div>
                                     </div>
-                                ))}
+                                ) : (
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        Single image selected. <br/>To add a gallery, select a Collection from the library.
+                                    </p>
+                                )}
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="text-sm text-slate-500 dark:text-slate-400 italic">
+                                No media selected.<br/>Choose an image or collection to display.
+                            </div>
+                        )}
+                    </div>
                 </div>
            </div>
 

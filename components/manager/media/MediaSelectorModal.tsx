@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import BaseModal from '../../modals/BaseModal';
 import { useModal } from '../../../contexts/ModalContext';
 import { getMediaAssets, uploadMediaAsset, getMediaCollections } from '../../../services/mediaService';
@@ -24,12 +24,6 @@ const MediaSelectorModal: React.FC = () => {
     const [selectedCollection, setSelectedCollection] = useState<MediaCollection | null>(null);
     const [activeTab, setActiveTab] = useState<'library' | 'collections' | 'upload'>('library');
 
-    const resetState = () => {
-        setSelectedAsset(null);
-        setSelectedCollection(null);
-        setActiveTab('library');
-    };
-
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
@@ -38,24 +32,25 @@ const MediaSelectorModal: React.FC = () => {
                     setAssets(assetsData);
                     setCollections(collectionsData);
                     
+                    // Logic to preset selection based on incoming data
                     const { collectionId, imageUrl } = currentSelection || {};
                     
+                    // Reset local state first
+                    setSelectedAsset(null);
+                    setSelectedCollection(null);
+
                     if (collectionId) {
-                        const found = collectionsData.find(c => c.id === collectionId);
+                        const found = collectionsData.find(c => c.id === Number(collectionId));
                         if (found) {
                             setSelectedCollection(found);
-                            setSelectedAsset(null);
                             setActiveTab('collections');
                         }
                     } else if (imageUrl) {
                         const found = assetsData.find(a => a.public_url === imageUrl);
                         if (found) {
                             setSelectedAsset(found);
-                            setSelectedCollection(null);
                             setActiveTab('library');
                         }
-                    } else {
-                        resetState();
                     }
                 })
                 .catch(err => {
@@ -66,9 +61,12 @@ const MediaSelectorModal: React.FC = () => {
                     setLoading(false);
                 });
         } else {
-            resetState();
+            // Reset on close
+            setSelectedAsset(null);
+            setSelectedCollection(null);
+            setActiveTab('library');
         }
-    }, [isOpen, currentSelection]);
+    }, [isOpen, currentSelection, addNotification]);
 
     const handleConfirmSelection = () => {
         if (!onSelect) return;
@@ -83,10 +81,14 @@ const MediaSelectorModal: React.FC = () => {
             });
         } else if (selectedCollection) {
             // Collection selection (Gallery)
-            // Ensure media_assets exists and map it correctly
             const assets = selectedCollection.media_assets || [];
-            const coverImage = assets.length > 0 ? assets[0].public_url : 'https://via.placeholder.com/400?text=Empty+Collection';
-            const previewImages = assets.map(a => a.public_url);
+            
+            // Safely determine cover image
+            const coverImage = assets.length > 0 && assets[0]?.public_url 
+                ? assets[0].public_url 
+                : 'https://via.placeholder.com/400?text=Empty+Collection';
+            
+            const previewImages = assets.map(a => a.public_url).filter(Boolean);
             
             onSelect({
                 imageUrl: coverImage,
@@ -106,7 +108,7 @@ const MediaSelectorModal: React.FC = () => {
         try {
             const newAsset = await uploadMediaAsset(file, user?.id);
             if (onSelect) {
-                // Direct upload -> set as cover
+                // Direct upload -> set as cover immediately and close
                 onSelect({ 
                     imageUrl: newAsset.public_url, 
                     collectionId: null, 
@@ -223,7 +225,7 @@ const MediaSelectorModal: React.FC = () => {
                             {selectedCollection && (
                                 <>
                                     <i className="fas fa-images text-slate-400"></i>
-                                    <span>Selected Gallery: <strong>{selectedCollection.name}</strong> ({selectedCollection.media_assets?.length} items)</span>
+                                    <span>Selected Gallery: <strong>{selectedCollection.name}</strong> ({selectedCollection.media_assets?.length || 0} items)</span>
                                 </>
                             )}
                         </div>
