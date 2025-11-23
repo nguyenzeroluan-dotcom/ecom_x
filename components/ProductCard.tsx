@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';
@@ -28,6 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
   const reviews = product.reviews_count || Math.floor(Math.random() * 50) + 5;
   
   // Carousel State
+  // Note: We deliberately exclude video from grid hover preview for performance and simplicity
   const { gallery_images } = product;
   const hasGallery = gallery_images && gallery_images.length > 0;
   const displayImages = hasGallery ? [product.image_url, ...gallery_images] : [product.image_url];
@@ -97,6 +97,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
             <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none z-10"></div>
             {isOutOfStock && <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center text-white font-bold tracking-wider">SOLD OUT</div>}
+            {product.video_url && (
+                <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1">
+                    <i className="fas fa-play"></i> Video
+                </div>
+            )}
         </div>
         <div className="flex-1 p-6 flex flex-col justify-between relative">
             <div>
@@ -181,6 +186,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid', ind
             {(displayImages.length > 1) && (
                 <span className="bg-slate-900/50 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1.5">
                     <i className="fas fa-images"></i> {displayImages.length}
+                </span>
+            )}
+            {product.video_url && (
+                <span className="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1.5">
+                    <i className="fas fa-play-circle"></i> Video
                 </span>
             )}
             {Number(product.price) > 100 && (

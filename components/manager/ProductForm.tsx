@@ -35,8 +35,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
     category: '',
     description: '',
     image_url: '',
+    video_url: '',
     stock: '10',
-    collection_id: null as number | null, // Explicitly null for DB compatibility
+    collection_id: null as number | null,
     is_digital: false,
     digital_content: ''
   });
@@ -45,14 +46,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [previewGallery, setPreviewGallery] = useState<string[]>([]);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [videoType, setVideoType] = useState<'youtube' | 'vimeo' | 'file' | null>(null);
   
   // URL Input State
   const [isUrlMode, setIsUrlMode] = useState(false);
   const [urlInputValue, setUrlInputValue] = useState('');
 
   const magicInputRef = useRef<HTMLInputElement>(null);
-  
-  // Track the ID to prevent resetting form when other props (like categories) change reference
   const activeId = initialData?.id || 'new';
 
   useEffect(() => {
@@ -64,13 +65,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
         category: initialData.category || 'Uncategorized',
         description: initialData.description,
         image_url: initialData.image_url,
+        video_url: initialData.video_url || '',
         stock: initialData.stock !== undefined ? initialData.stock.toString() : '10',
         collection_id: initialData.collection_id || null,
         is_digital: initialData.is_digital || false,
         digital_content: initialData.digital_content || ''
       });
       
-      // Initialize gallery preview from initialData
       if (initialData.gallery_images && initialData.gallery_images.length > 0) {
           setGalleryImageCount(initialData.gallery_images.length);
           setPreviewGallery(initialData.gallery_images);
@@ -78,8 +79,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
           setGalleryImageCount(0);
           setPreviewGallery([]);
       }
+      // Trigger validation on load to set video type
+      if (initialData.video_url) validateVideoUrl(initialData.video_url);
     } else {
-      // Reset to defaults for new product
       setFormData({ 
           name: '', 
           sku: '', 
@@ -87,6 +89,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           category: categories[0] || 'Home', 
           description: '', 
           image_url: '', 
+          video_url: '',
           stock: '20', 
           collection_id: null, 
           is_digital: false, 
@@ -94,18 +97,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
       });
       setGalleryImageCount(0);
       setPreviewGallery([]);
+      setVideoType(null);
     }
-    // CRITICAL FIX: Do NOT include 'categories' in dependency array.
-    // It changes reference on every parent render, causing form reset.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, initialData]); 
-
-  // Auto-detect digital category
-  useEffect(() => {
-      if (formData.category.toLowerCase().includes('book') || formData.category.toLowerCase().includes('digital')) {
-          setFormData(prev => ({ ...prev, is_digital: true }));
-      }
-  }, [formData.category]);
 
   const generateSku = () => {
       const prefix = formData.name.substring(0, 3).toUpperCase() || 'PRD';
@@ -121,6 +115,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
     } else {
         setFormData(prev => ({ ...prev, [name]: value }));
     }
+
+    if (name === 'video_url') {
+        validateVideoUrl(value);
+    }
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,14 +132,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
               collectionId: formData.collection_id,
           },
           onSelect: (media: { imageUrl: string; collectionId: number | null, imageCount: number, previewImages?: string[] }) => {
-              // Update form data with new selections
               setFormData(prev => ({
                   ...prev,
                   image_url: media.imageUrl,
                   collection_id: media.collectionId,
               }));
               
-              // Update preview state immediately
               setGalleryImageCount(media.imageCount || 0);
               if (media.previewImages && media.previewImages.length > 0) {
                   setPreviewGallery(media.previewImages);
@@ -157,7 +153,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           setFormData(prev => ({ 
               ...prev, 
               image_url: urlInputValue.trim(),
-              collection_id: null // Custom URL overrides gallery connection
+              collection_id: null 
           }));
           setPreviewGallery([]);
           setGalleryImageCount(0);
@@ -207,23 +203,66 @@ const ProductForm: React.FC<ProductFormProps> = ({
       }
   };
 
+  const validateVideoUrl = (url: string) => {
+      setVideoError(null);
+      setVideoType(null);
+      if (!url) return true;
+
+      // YouTube
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+          setVideoType('youtube');
+          return true;
+      }
+      // Vimeo
+      if (url.includes('vimeo.com')) {
+          setVideoType('vimeo');
+          return true;
+      }
+      // Direct File
+      if (url.match(/\.(mp4|webm|ogg|mov)$/i)) {
+          setVideoType('file');
+          return true;
+      }
+      
+      setVideoError("Unknown video format. Use YouTube, Vimeo, or .mp4 link.");
+      return false;
+  };
+
+  const getEmbedUrl = (url: string, type: string | null): string => {
+      if (!type) return url;
+      if (type === 'youtube') {
+          let id = '';
+          if (url.includes('youtu.be')) id = url.split('/').pop()?.split('?')[0] || '';
+          else if (url.includes('v=')) id = url.split('v=')[1]?.split('&')[0] || '';
+          return `https://www.youtube.com/embed/${id}`;
+      }
+      if (type === 'vimeo') {
+          const id = url.split('/').pop();
+          if (!url.includes('player.vimeo.com')) return `https://player.vimeo.com/video/${id}`;
+      }
+      return url;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (videoError) return;
+
     const success = await onSubmit({
       name: formData.name,
       sku: formData.sku || undefined,
       price: parseFloat(formData.price),
       description: formData.description,
       image_url: formData.image_url || 'https://via.placeholder.com/400',
+      video_url: formData.video_url || undefined,
       category: formData.category,
       stock: parseInt(formData.stock) || 0,
-      collection_id: formData.collection_id || undefined, // Pass undefined to skip update if not set? No, explicit null is better for clearing.
+      collection_id: formData.collection_id || undefined,
       is_digital: formData.is_digital,
       digital_content: formData.digital_content
     });
     
     if (success && !isEditing) {
-      // Reset form for next add
       setFormData({ 
           name: '', 
           sku: '', 
@@ -231,6 +270,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           category: categories[0] || 'Home', 
           description: '', 
           image_url: '', 
+          video_url: '',
           stock: '20', 
           collection_id: null, 
           is_digital: false, 
@@ -239,6 +279,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setIsCustomCategory(false);
       setGalleryImageCount(0);
       setPreviewGallery([]);
+      setVideoType(null);
     }
   };
 
@@ -355,10 +396,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
           {formData.is_digital && (
               <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Book Content / Digital Data
-                      <span className="text-xs text-slate-400 ml-2 font-normal">(Paste text or URL for demo)</span>
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Book Content</label>
                   <textarea 
                     name="digital_content" 
                     rows={6} 
@@ -385,9 +423,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
            <div className="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Product Media</label>
                 
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-4 items-start flex-wrap sm:flex-nowrap">
                     {/* Main Media Card */}
-                    <div className="relative w-32 h-32 bg-white dark:bg-slate-800 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden group shadow-sm transition-all hover:border-primary">
+                    <div className="relative w-32 h-32 bg-white dark:bg-slate-800 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden group shadow-sm transition-all hover:border-primary shrink-0">
                         {formData.image_url ? (
                             <>
                                 <img src={formData.image_url} alt="Cover" className="w-full h-full object-cover" />
@@ -432,10 +470,57 @@ const ProductForm: React.FC<ProductFormProps> = ({
                     </div>
 
                     {/* Context / Preview Area */}
-                    <div className="flex-1 flex flex-col justify-center min-h-[128px]">
+                    <div className="flex-1 flex flex-col min-h-[128px]">
+                        <div className="mb-3">
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                                Video URL (Optional) 
+                                {videoType && <span className="ml-2 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded uppercase">{videoType}</span>}
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input 
+                                    type="text" 
+                                    name="video_url" 
+                                    value={formData.video_url} 
+                                    onChange={handleInputChange} 
+                                    placeholder="https://youtube.com/watch?v=... or .mp4 link"
+                                    className={`w-full text-sm border ${videoError ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/50 focus:outline-none dark:bg-slate-900 dark:text-white`}
+                                />
+                                {formData.video_url && !videoError && (
+                                    <div className="h-9 w-9 bg-slate-900 rounded-lg overflow-hidden flex-shrink-0 border border-slate-600 relative group">
+                                        {videoType === 'youtube' || videoType === 'vimeo' ? (
+                                            <div className="w-full h-full flex items-center justify-center bg-black text-white">
+                                                <i className="fab fa-youtube text-xs"></i>
+                                            </div>
+                                        ) : (
+                                            <video src={formData.video_url} className="w-full h-full object-cover" muted playsInline />
+                                        )}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-transparent transition-all">
+                                            <i className="fas fa-play text-[8px] text-white"></i>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            {videoError && <p className="text-[10px] text-red-500 mt-1">{videoError}</p>}
+                            {formData.video_url && !videoError && (
+                                 <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black border border-slate-300 dark:border-slate-600 shadow-sm">
+                                     {(videoType === 'youtube' || videoType === 'vimeo') ? (
+                                         <iframe 
+                                            src={getEmbedUrl(formData.video_url, videoType)} 
+                                            className="w-full h-full" 
+                                            frameBorder="0" 
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                            allowFullScreen 
+                                         />
+                                     ) : (
+                                         <video src={formData.video_url} controls className="w-full h-full" />
+                                     )}
+                                 </div>
+                            )}
+                        </div>
+
                         {formData.image_url ? (
-                            <div className="animate-fade-in">
-                                <div className="flex items-center gap-2 mb-2">
+                            <div className="animate-fade-in mt-auto">
+                                <div className="flex items-center gap-2 mb-1">
                                     <span className="text-sm font-bold text-slate-800 dark:text-white">Cover Image Set</span>
                                     <i className="fas fa-check-circle text-green-500"></i>
                                 </div>
@@ -457,7 +542,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                                 )}
                             </div>
                         ) : (
-                            <div className="text-sm text-slate-500 dark:text-slate-400 italic">
+                            <div className="text-sm text-slate-500 dark:text-slate-400 italic mt-auto">
                                 No media selected.<br/>Choose an image or collection to display.
                             </div>
                         )}

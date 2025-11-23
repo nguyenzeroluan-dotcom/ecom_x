@@ -8,6 +8,7 @@ import { MEDIA_MANAGER_SQL } from '../../data/05_media_manager';
 import { MEDIA_COLLECTIONS_SQL } from '../../data/07_media_collections';
 import { EBOOKS_SETUP_SQL } from '../../data/08_ebooks_setup';
 import { GALLERY_VIEW_FIX_SQL } from '../../data/09_gallery_view_fix';
+import { VIDEO_URL_SUPPORT_SQL } from '../../data/10_video_url_support';
 import { useNotification } from '../../contexts/NotificationContext';
 
 interface ScriptItemProps {
@@ -129,11 +130,18 @@ const SqlViewer: React.FC = () => {
       label: 'E-Books'
     },
     {
-      title: '8. Gallery View Fix (Critical)',
-      description: 'Run this to fix "gallery_images" persistence issue.',
+      title: '8. Gallery View Fix',
+      description: 'Ensures gallery_images persistence.',
       sql: GALLERY_VIEW_FIX_SQL,
       color: 'text-teal-400',
       label: 'Gallery Fix'
+    },
+    {
+      title: '9. Video URL Support (New)',
+      description: 'Adds video_url column to products.',
+      sql: VIDEO_URL_SUPPORT_SQL,
+      color: 'text-indigo-400',
+      label: 'Video Support'
     }
   ];
 

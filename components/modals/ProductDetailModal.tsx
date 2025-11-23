@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import BaseModal from './BaseModal';
 import { useModal } from '../../contexts/ModalContext';
@@ -19,9 +18,14 @@ const ProductDetailModal: React.FC = () => {
 
   if (!product) return null;
   
-  const displayImages = (product.gallery_images && product.gallery_images.length > 0) 
-      ? product.gallery_images 
-      : [product.image_url];
+  // Construct display media: [Cover, Video?, ...Gallery]
+  const displayImages = [product.image_url];
+  if (product.video_url) {
+      displayImages.push(product.video_url);
+  }
+  if (product.gallery_images && product.gallery_images.length > 0) {
+      displayImages.push(...product.gallery_images);
+  }
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -74,7 +78,7 @@ const ProductDetailModal: React.FC = () => {
                 <div className="text-4xl font-bold text-primary mb-6">
                     ${Number(product.price).toFixed(2)}
                 </div>
-                <div className="prose prose-slate dark:prose-invert mb-8 flex-grow">
+                <div className="prose prose-slate dark:prose-invert mb-8 flex-grow custom-scrollbar overflow-y-auto max-h-[200px]">
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{product.description}</p>
                 </div>
               </>

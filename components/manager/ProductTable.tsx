@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { Product } from '../../types';
 
@@ -8,11 +7,12 @@ interface ProductTableProps {
   loading: boolean;
   viewMode: 'table' | 'grid' | 'list';
   onEdit: (product: Product) => void;
+  onView: (product: Product) => void;
   onDelete: (id: number | string) => void;
   onBulkDelete: (ids: (string | number)[]) => void;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode, onEdit, onDelete, onBulkDelete }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode, onEdit, onView, onDelete, onBulkDelete }) => {
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
   const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
 
@@ -38,7 +38,6 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
       }
   };
   
-  // Placeholder for future bulk actions
   const handleBulkSetCategory = () => {
       alert(`Feature in development: Set category for ${selectedIds.length} items.`);
       setIsBulkMenuOpen(false);
@@ -88,17 +87,22 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-4">
             {products.map(product => (
             <div key={product.id} className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border overflow-hidden flex flex-col ${selectedIds.includes(product.id) ? 'border-primary ring-2 ring-primary/20' : 'border-slate-100 dark:border-slate-700'}`}>
-                <div className="aspect-square relative group">
+                <div className="aspect-square relative group cursor-pointer" onClick={() => onView(product)}>
                     <img src={product.image_url || 'https://via.placeholder.com/100'} alt={product.name} className="w-full h-full object-cover" />
                     
                     {/* Checkbox Overlay */}
-                    <div className={`absolute top-2 left-2 z-10 ${selectedIds.length > 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                    <div className={`absolute top-2 left-2 z-10 ${selectedIds.length > 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`} onClick={e => e.stopPropagation()}>
                         <input 
                             type="checkbox" 
                             checked={selectedIds.includes(product.id)} 
                             onChange={() => toggleSelect(product.id)}
                             className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                         />
+                    </div>
+                    
+                    {/* Hover Overlay with View Button */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button className="bg-white/90 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-sm shadow-lg backdrop-blur-sm">View Details</button>
                     </div>
                     
                     {(product.stock || 0) < 5 && (
@@ -108,7 +112,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
                 <div className="p-4 flex-1 flex flex-col">
                     <div className="flex justify-between items-start">
                         <div>
-                            <h3 className="font-bold text-slate-900 dark:text-white truncate w-32">{product.name}</h3>
+                            <h3 className="font-bold text-slate-900 dark:text-white truncate w-32 cursor-pointer hover:text-primary" onClick={() => onView(product)}>{product.name}</h3>
                             <p className="text-xs text-slate-500 font-mono">{product.sku || '-'}</p>
                         </div>
                         <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300">{product.category}</span>
@@ -143,11 +147,11 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
                     onChange={() => toggleSelect(product.id)}
                     className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                 />
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => onView(product)}>
                     <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                 </div>
-                <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-900 dark:text-white truncate">{product.name}</h4>
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onView(product)}>
+                    <h4 className="font-bold text-slate-900 dark:text-white truncate hover:text-primary">{product.name}</h4>
                     <p className="text-xs text-slate-500 font-mono mb-1">SKU: {product.sku || 'N/A'}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{product.description}</p>
                 </div>
@@ -158,8 +162,9 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
                     </span>
                 </div>
                 <div className="flex gap-2 border-l border-slate-100 dark:border-slate-700 pl-4">
-                    <button onClick={() => onEdit(product)} className="text-slate-400 hover:text-blue-500"><i className="fas fa-edit"></i></button>
-                    <button onClick={() => onDelete(product.id)} className="text-slate-400 hover:text-red-500"><i className="fas fa-trash"></i></button>
+                    <button onClick={() => onView(product)} className="text-slate-400 hover:text-primary" title="View Details"><i className="fas fa-eye"></i></button>
+                    <button onClick={() => onEdit(product)} className="text-slate-400 hover:text-blue-500" title="Edit"><i className="fas fa-edit"></i></button>
+                    <button onClick={() => onDelete(product.id)} className="text-slate-400 hover:text-red-500" title="Delete"><i className="fas fa-trash"></i></button>
                 </div>
             </div>
             ))}
@@ -208,13 +213,13 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
                                 className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                             />
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 cursor-pointer" onClick={() => onView(product)}>
                         <div className="flex items-center">
                             <div className="h-10 w-10 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 mr-3 border border-slate-200 dark:border-slate-600 relative">
                             <img className={`h-full w-full object-cover ${isOutOfStock ? 'grayscale opacity-75' : ''}`} src={product.image_url || 'https://via.placeholder.com/100'} alt="" />
                             </div>
                             <div>
-                            <div className={`text-sm font-medium ${isOutOfStock ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>{product.name}</div>
+                            <div className={`text-sm font-medium hover:text-primary transition-colors ${isOutOfStock ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>{product.name}</div>
                             </div>
                         </div>
                         </td>
@@ -242,10 +247,13 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, viewMode
                         ${Number(product.price).toFixed(2)}
                         </td>
                         <td className="px-6 py-4 text-right space-x-2">
-                        <button onClick={() => onEdit(product)} className="text-slate-400 hover:text-blue-500 transition-colors p-1" title="Edit">
+                        <button onClick={(e) => {e.stopPropagation(); onView(product)}} className="text-slate-400 hover:text-primary transition-colors p-1" title="View Details">
+                            <i className="fas fa-eye"></i>
+                        </button>
+                        <button onClick={(e) => {e.stopPropagation(); onEdit(product)}} className="text-slate-400 hover:text-blue-500 transition-colors p-1" title="Edit">
                             <i className="fas fa-edit"></i>
                         </button>
-                        <button onClick={() => onDelete(product.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete">
+                        <button onClick={(e) => {e.stopPropagation(); onDelete(product.id)}} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete">
                             <i className="fas fa-trash"></i>
                         </button>
                         </td>

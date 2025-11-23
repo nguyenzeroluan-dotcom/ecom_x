@@ -1,9 +1,10 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Product, ManagerViewMode, ModalType } from '../types';
-import ProductForm from './manager/ProductForm';
-import ProductTable from './manager/ProductTable';
-import { useNotification } from '../contexts/NotificationContext';
-import { useModal } from '../contexts/ModalContext';
+import { Product, ManagerViewMode, ModalType } from '../../types';
+import ProductForm from './ProductForm';
+import ProductTable from './ProductTable';
+import { useNotification } from '../../contexts/NotificationContext';
+import { useModal } from '../../contexts/ModalContext';
 
 interface ProductManagerProps {
   products: Product[];
@@ -51,11 +52,11 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   };
 
   const handleView = (product: Product) => {
-    openModal(ModalType.PRODUCT_ADMIN_DETAIL, {
-        product,
-        onEdit: handleEdit,
-        onDelete: handleDeleteProduct
-    });
+      openModal(ModalType.PRODUCT_ADMIN_DETAIL, {
+          product,
+          onEdit: handleEdit,
+          onDelete: handleDeleteProduct
+      });
   };
 
   const handleCancelEdit = () => {

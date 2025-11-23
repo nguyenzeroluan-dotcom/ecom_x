@@ -1,11 +1,11 @@
 
-
 export interface Product {
   id: number | string;
   name: string;
   price: number;
   description: string;
   image_url: string;
+  video_url?: string; // Added video support
   category?: string;
   stock?: number;
   sku?: string;
@@ -15,7 +15,7 @@ export interface Product {
   gallery_images?: string[];
   // New E-Book fields
   is_digital?: boolean; 
-  digital_content?: string; // For demo, we store text directly. Real app would use a URL to secure storage.
+  digital_content?: string; 
 }
 
 export interface LibraryItem {
@@ -86,6 +86,7 @@ export enum AspectRatio {
 export enum ModalType {
   NONE = 'NONE',
   PRODUCT_DETAIL = 'PRODUCT_DETAIL',
+  PRODUCT_ADMIN_DETAIL = 'PRODUCT_ADMIN_DETAIL', // New Type
   CONFIRM = 'CONFIRM',
   SUCCESS = 'SUCCESS',
   COMPARISON = 'COMPARISON',

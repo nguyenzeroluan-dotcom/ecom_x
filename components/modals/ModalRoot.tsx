@@ -1,9 +1,9 @@
 
-
 import React from 'react';
 import { useModal } from '../../contexts/ModalContext';
 import { ModalType } from '../../types';
 import ProductDetailModal from './ProductDetailModal';
+import ProductDetailAdminModal from '../manager/product/ProductDetailAdminModal';
 import ConfirmModal from './ConfirmModal';
 import SuccessModal from './SuccessModal';
 import ComparisonModal from './ComparisonModal';
@@ -22,6 +22,8 @@ const ModalRoot: React.FC = () => {
   switch (modalType) {
     case ModalType.PRODUCT_DETAIL:
       return <ProductDetailModal />;
+    case ModalType.PRODUCT_ADMIN_DETAIL:
+      return <ProductDetailAdminModal />;
     case ModalType.CONFIRM:
       return <ConfirmModal />;
     case ModalType.SUCCESS:

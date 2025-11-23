@@ -8,6 +8,7 @@ import { PRODUCT_MEDIA_INTEGRATION_SQL } from '../data/06_product_media_integrat
 import { MEDIA_COLLECTIONS_SQL } from '../data/07_media_collections';
 import { EBOOKS_SETUP_SQL } from '../data/08_ebooks_setup';
 import { GALLERY_VIEW_FIX_SQL } from '../data/09_gallery_view_fix';
+import { VIDEO_URL_SUPPORT_SQL } from '../data/10_video_url_support';
 
 // Combined SQL for Database Setup
 export const DATABASE_SETUP_SQL = 
@@ -19,4 +20,5 @@ export const DATABASE_SETUP_SQL =
     PRODUCT_MEDIA_INTEGRATION_SQL + '\n\n' +
     MEDIA_COLLECTIONS_SQL + '\n\n' +
     EBOOKS_SETUP_SQL + '\n\n' +
-    GALLERY_VIEW_FIX_SQL;
+    GALLERY_VIEW_FIX_SQL + '\n\n' +
+    VIDEO_URL_SUPPORT_SQL;
