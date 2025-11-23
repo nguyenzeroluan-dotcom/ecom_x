@@ -11,6 +11,11 @@ import { GALLERY_VIEW_FIX_SQL } from '../../data/09_gallery_view_fix';
 import { VIDEO_URL_SUPPORT_SQL } from '../../data/10_video_url_support';
 import { EBOOKS_ADVANCED_SQL } from '../../data/11_ebooks_advanced';
 import { ORDER_MANAGEMENT_SQL } from '../../data/12_order_management';
+import { LIBRARY_SYNC_SQL } from '../../data/13_library_sync';
+import { ADMIN_LIBRARY_ACCESS_SQL } from '../../data/14_admin_library_access';
+import { DEMO_ADMIN_SUPPORT_SQL } from '../../data/15_demo_admin_support';
+import { LIBRARY_RLS_FIX_SQL } from '../../data/16_library_rls_fix';
+import { FIX_FULFILLMENT_RLS_SQL } from '../../data/17_fix_fulfillment_rls';
 import { useNotification } from '../../contexts/NotificationContext';
 
 interface ScriptItemProps {
@@ -146,18 +151,53 @@ const SqlViewer: React.FC = () => {
       label: 'Video Support'
     },
     {
-        title: '10. Advanced E-Book Manager (NEW)',
+        title: '10. Advanced E-Book Manager',
         description: 'Enables PDF upload, storage bucket setup, and simplified permissions.',
         sql: EBOOKS_ADVANCED_SQL,
         color: 'text-rose-400',
         label: 'Adv. E-Books'
     },
     {
-        title: '11. Order Management (NEW)',
+        title: '11. Order Management',
         description: 'Adds tracking numbers and admin update permissions.',
         sql: ORDER_MANAGEMENT_SQL,
         color: 'text-emerald-400',
         label: 'Orders'
+    },
+    {
+        title: '12. Library Sync Fix',
+        description: 'Links orders to products for reliable library synchronization.',
+        sql: LIBRARY_SYNC_SQL,
+        color: 'text-lime-400',
+        label: 'Sync Fix'
+    },
+    {
+        title: '13. Admin Library Access',
+        description: 'Allow Admins to fulfill digital orders (write to user library).',
+        sql: ADMIN_LIBRARY_ACCESS_SQL,
+        color: 'text-amber-400',
+        label: 'Admin Access'
+    },
+    {
+        title: '14. Demo Admin Support',
+        description: 'Seeds the Demo User into the database and fixes Foreign Key constraints.',
+        sql: DEMO_ADMIN_SUPPORT_SQL,
+        color: 'text-gray-400',
+        label: 'Demo Seed'
+    },
+    {
+        title: '15. Demo Library RLS Fix',
+        description: 'Fixes view permissions for the Demo Admin.',
+        sql: LIBRARY_RLS_FIX_SQL,
+        color: 'text-red-400',
+        label: 'View Fix'
+    },
+    {
+        title: '16. Demo Fulfillment Fix (CRITICAL)',
+        description: 'Fixes "new row violates RLS" error when fulfilling orders.',
+        sql: FIX_FULFILLMENT_RLS_SQL,
+        color: 'text-red-500',
+        label: 'Insert Fix'
     }
   ];
 

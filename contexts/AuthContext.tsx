@@ -1,8 +1,10 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { getUserProfile, updateUserProfile } from '../services/userService';
 import { UserProfile, AuthContextType } from '../types';
 import { useNotification } from './NotificationContext';
+import { DEMO_USER_UUID } from '../constants';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -71,22 +73,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const demoLogin = () => {
-      // Fallback for demo purposes without backend email sending
+      // Persistent Demo User UUID matching the seeded DB record
       const mockUser: UserProfile = {
-          id: 'demo-user-123',
+          id: DEMO_USER_UUID,
           email: 'admin@nexus.ai',
           full_name: 'Demo Admin',
           avatar_url: 'https://i.pravatar.cc/150?u=nexus-admin',
           ai_style_preference: 'Futuristic Minimalist',
           address: '123 Innovation Drive, Tech City',
-          role: 'admin' // Demo user is an admin
+          city: 'San Francisco',
+          role: 'admin' 
       };
       setUser(mockUser);
       addNotification('success', 'Logged in as Demo Admin');
   };
 
   const signOut = async () => {
-    if (user?.id === 'demo-user-123') {
+    if (user?.id === DEMO_USER_UUID) {
         setUser(null);
     } else {
         await supabase.auth.signOut();
@@ -97,20 +100,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateProfile = async (updates: Partial<UserProfile>) => {
       if (!user) return;
       
-      if (user.id === 'demo-user-123') {
-          setUser(prev => prev ? ({ ...prev, ...updates }) : null);
-          addNotification('success', 'Profile updated (Local Demo)');
-          return;
-      }
-
+      // Allow DB update for Demo User now that we have the SQL script
       try {
           const updated = await updateUserProfile(user.id, updates);
           if (updated) {
-              setUser(updated);
+              setUser(prev => prev ? ({ ...prev, ...updated }) : null);
               addNotification('success', 'Profile updated successfully');
           }
       } catch (e: any) {
-          addNotification('error', 'Failed to update profile');
+          console.error("Update failed", e);
+          // Fallback for demo if DB setup isn't run yet
+          if (user.id === DEMO_USER_UUID) {
+             setUser(prev => prev ? ({ ...prev, ...updates }) : null);
+             addNotification('success', 'Profile updated (Local Fallback)');
+          } else {
+             addNotification('error', 'Failed to update profile');
+          }
       }
   };
 

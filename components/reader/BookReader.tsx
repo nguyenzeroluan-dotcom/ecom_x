@@ -120,16 +120,28 @@ const BookReader: React.FC<BookReaderProps> = ({ bookItem, onClose }) => {
 
             {/* Reader Content Area */}
             {metadata?.format === 'pdf' && metadata.source_url ? (
-                <div className="flex-1 bg-slate-900 h-full pt-16 pb-0">
-                    <iframe 
-                        src={`${metadata.source_url}#toolbar=0`} 
-                        className="w-full h-full border-none"
-                        title="PDF Viewer"
-                    />
-                    {/* DRM Overlay for PDF to prevent simple drag/drop saving if iframe allows it */}
-                    {metadata.drm_enabled && (
-                        <div className="absolute inset-0 z-0 pointer-events-none"></div> 
-                    )}
+                <div className="flex-1 bg-slate-900 h-full pt-16 pb-0 overflow-hidden relative">
+                    {/* Use <object> instead of <iframe> to prevent Chrome blocking issues */}
+                    <object 
+                        data={`${metadata.source_url}#toolbar=0`} 
+                        type="application/pdf"
+                        className="w-full h-full block"
+                    >
+                        {/* Fallback Content if PDF cannot be embedded */}
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-900">
+                            <i className="fas fa-file-pdf text-5xl mb-4 opacity-50"></i>
+                            <p className="text-lg font-medium mb-2">Unable to display PDF directly.</p>
+                            <p className="text-sm mb-6 opacity-70 max-w-xs text-center">Your browser might be blocking the embedded PDF viewer.</p>
+                            <a 
+                                href={metadata.source_url} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-slate-200 transition-colors shadow-lg"
+                            >
+                                Download PDF
+                            </a>
+                        </div>
+                    </object>
                 </div>
             ) : (
                 <div 
@@ -141,11 +153,7 @@ const BookReader: React.FC<BookReaderProps> = ({ bookItem, onClose }) => {
                 >
                     {/* Transparent DRM Overlay to block text selection dragging */}
                     {metadata?.drm_enabled && (
-                        <div className="absolute inset-0 z-20 bg-transparent" onClick={(e) => {
-                            // Allow clicks to pass through for basic navigation but block drag selection start
-                            // Actually, pointer-events-none on overlay defeats the purpose, 
-                            // so we handle clicks to toggle controls, but css user-select:none handles the rest.
-                        }} />
+                        <div className="absolute inset-0 z-20 bg-transparent" />
                     )}
 
                     <div 

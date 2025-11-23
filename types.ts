@@ -134,6 +134,7 @@ export interface Order {
 export interface OrderItem {
   id?: number;
   order_id?: number;
+  product_id?: number; // Added for library sync
   product_name: string;
   price: number;
   quantity: number;

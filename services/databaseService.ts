@@ -11,6 +11,11 @@ import { GALLERY_VIEW_FIX_SQL } from '../data/09_gallery_view_fix';
 import { VIDEO_URL_SUPPORT_SQL } from '../data/10_video_url_support';
 import { EBOOKS_ADVANCED_SQL } from '../data/11_ebooks_advanced';
 import { ORDER_MANAGEMENT_SQL } from '../data/12_order_management';
+import { LIBRARY_SYNC_SQL } from '../data/13_library_sync';
+import { ADMIN_LIBRARY_ACCESS_SQL } from '../data/14_admin_library_access';
+import { DEMO_ADMIN_SUPPORT_SQL } from '../data/15_demo_admin_support';
+import { LIBRARY_RLS_FIX_SQL } from '../data/16_library_rls_fix';
+import { FIX_FULFILLMENT_RLS_SQL } from '../data/17_fix_fulfillment_rls';
 
 // Combined SQL for Database Setup
 export const DATABASE_SETUP_SQL = 
@@ -25,4 +30,9 @@ export const DATABASE_SETUP_SQL =
     GALLERY_VIEW_FIX_SQL + '\n\n' +
     VIDEO_URL_SUPPORT_SQL + '\n\n' +
     EBOOKS_ADVANCED_SQL + '\n\n' +
-    ORDER_MANAGEMENT_SQL;
+    ORDER_MANAGEMENT_SQL + '\n\n' +
+    LIBRARY_SYNC_SQL + '\n\n' +
+    ADMIN_LIBRARY_ACCESS_SQL + '\n\n' +
+    DEMO_ADMIN_SUPPORT_SQL + '\n\n' +
+    LIBRARY_RLS_FIX_SQL + '\n\n' +
+    FIX_FULFILLMENT_RLS_SQL;

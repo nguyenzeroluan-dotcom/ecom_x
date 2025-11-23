@@ -1,12 +1,11 @@
+
 import { supabase } from './supabaseClient';
 import { UserProfile, AppRole } from '../types';
+import { DEMO_USER_UUID } from '../constants';
 
 // --- User Profile Services ---
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
-  // If demo user, avoid DB call that expects UUID
-  if (userId === 'demo-user-123') return null;
-
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -20,9 +19,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 };
 
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> => {
-    // If demo user, mock return
-    if (userId === 'demo-user-123') return { ...updates, id: userId, email: 'demo@nexus.ai' } as UserProfile;
-
     const { data, error } = await supabase
       .from('profiles')
       .upsert({ id: userId, ...updates, updated_at: new Date() })
@@ -66,6 +62,10 @@ export const createUserProfile = async (profile: Partial<UserProfile>): Promise<
 };
 
 export const deleteUser = async (userId: string): Promise<void> => {
+    if (userId === DEMO_USER_UUID) {
+        throw new Error("Cannot delete the built-in Demo Admin.");
+    }
+
     const { error } = await supabase
         .from('profiles')
         .delete()

@@ -9,6 +9,9 @@ export const GEMINI_IMAGE_GEN_MODEL = 'gemini-3-pro-image-preview';
 export const GEMINI_VISION_MODEL = 'gemini-3-pro-preview';
 export const GEMINI_THINKING_MODEL = 'gemini-3-pro-preview';
 
+// Demo User Constant
+export const DEMO_USER_UUID = '00000000-0000-0000-0000-000000000000';
+
 // Mock Data for Fallback
 export const MOCK_PRODUCTS = [
   {
