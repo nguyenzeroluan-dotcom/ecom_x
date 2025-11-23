@@ -16,6 +16,7 @@ import { ADMIN_LIBRARY_ACCESS_SQL } from '../data/14_admin_library_access';
 import { DEMO_ADMIN_SUPPORT_SQL } from '../data/15_demo_admin_support';
 import { LIBRARY_RLS_FIX_SQL } from '../data/16_library_rls_fix';
 import { FIX_FULFILLMENT_RLS_SQL } from '../data/17_fix_fulfillment_rls';
+import { ORDER_ARCHIVING_SQL } from '../data/20_order_archiving';
 
 // Combined SQL for Database Setup
 export const DATABASE_SETUP_SQL = 
@@ -35,4 +36,5 @@ export const DATABASE_SETUP_SQL =
     ADMIN_LIBRARY_ACCESS_SQL + '\n\n' +
     DEMO_ADMIN_SUPPORT_SQL + '\n\n' +
     LIBRARY_RLS_FIX_SQL + '\n\n' +
-    FIX_FULFILLMENT_RLS_SQL;
+    FIX_FULFILLMENT_RLS_SQL + '\n\n' +
+    ORDER_ARCHIVING_SQL;

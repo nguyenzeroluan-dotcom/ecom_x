@@ -131,6 +131,17 @@ export interface Order {
   tracking_number?: string;
 }
 
+export interface DeletedOrder {
+  id: number;
+  original_id: number;
+  customer_name: string;
+  customer_email: string;
+  total_amount: number;
+  deleted_at: string;
+  reason?: string;
+  items_snapshot: OrderItem[];
+}
+
 export interface OrderItem {
   id?: number;
   order_id?: number;

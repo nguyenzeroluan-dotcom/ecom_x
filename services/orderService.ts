@@ -1,6 +1,6 @@
 
 import { supabase } from './supabaseClient';
-import { Order, CartItem } from '../types';
+import { Order, CartItem, DeletedOrder } from '../types';
 import { logInventoryChange } from './inventoryService';
 import { updateProduct } from './productService';
 import { DEMO_USER_UUID } from '../constants';
@@ -238,11 +238,81 @@ export const updateOrder = async (
     return data as Order;
 };
 
-export const deleteOrder = async (orderId: number): Promise<void> => {
-    const { error } = await supabase
+// Soft Delete: Archives the order before removing it from the active table
+export const archiveOrder = async (orderId: number): Promise<void> => {
+    // 1. Fetch the order with its items
+    const { data: order, error: fetchError } = await supabase
+        .from('orders')
+        .select('*, items:order_items(*)')
+        .eq('id', orderId)
+        .single();
+
+    if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`);
+    if (!order) throw new Error("Order not found");
+
+    // 2. Insert into deleted_orders
+    const { data: archivedData, error: archiveError } = await supabase
+        .from('deleted_orders')
+        .insert([{
+            original_id: order.id,
+            customer_name: order.customer_name,
+            customer_email: order.customer_email,
+            total_amount: order.total_amount,
+            items_snapshot: order.items, // Store JSON snapshot
+            deleted_by: order.user_id // Or current admin ID if we had it in context easily, but this is fine
+        }])
+        .select()
+        .single();
+
+    if (archiveError) {
+        // Check if table exists
+        if (archiveError.code === '42P01') {
+            throw new Error("The 'deleted_orders' table is missing. Please run the archiving SQL script (#17).");
+        }
+        throw new Error(`Archive error: ${archiveError.message}`);
+    }
+
+    // 3. Delete from active orders table
+    const { error: deleteError } = await supabase
         .from('orders')
         .delete()
         .eq('id', orderId);
-    
+
+    if (deleteError) {
+        // ROLLBACK: If delete fails, remove the archived entry so we don't have a duplicate "deleted" log 
+        // for an order that still exists in the main table.
+        if (archivedData) {
+            await supabase.from('deleted_orders').delete().eq('id', archivedData.id);
+        }
+        
+        if (deleteError.message.includes('foreign key constraint')) {
+             throw new Error("Failed to delete: Order items are still linked. Please update the SQL script to enable 'ON DELETE CASCADE'.");
+        }
+        throw new Error(`Delete error: ${deleteError.message}`);
+    }
+};
+
+export const getArchivedOrders = async (): Promise<DeletedOrder[]> => {
+    const { data, error } = await supabase
+        .from('deleted_orders')
+        .select('*')
+        .order('deleted_at', { ascending: false });
+
+    if (error) {
+        if (error.code === '42P01') return [];
+        throw new Error(error.message);
+    }
+    return data as DeletedOrder[];
+};
+
+export const permanentlyDeleteOrder = async (id: number): Promise<void> => {
+    const { error } = await supabase
+        .from('deleted_orders')
+        .delete()
+        .eq('id', id);
+
     if (error) throw new Error(error.message);
 };
+
+// Legacy delete (renamed to avoid confusion, but kept if needed directly)
+export const deleteOrder = archiveOrder;

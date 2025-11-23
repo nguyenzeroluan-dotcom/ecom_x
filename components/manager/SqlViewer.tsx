@@ -16,6 +16,7 @@ import { ADMIN_LIBRARY_ACCESS_SQL } from '../../data/14_admin_library_access';
 import { DEMO_ADMIN_SUPPORT_SQL } from '../../data/15_demo_admin_support';
 import { LIBRARY_RLS_FIX_SQL } from '../../data/16_library_rls_fix';
 import { FIX_FULFILLMENT_RLS_SQL } from '../../data/17_fix_fulfillment_rls';
+import { ORDER_ARCHIVING_SQL } from '../../data/20_order_archiving';
 import { useNotification } from '../../contexts/NotificationContext';
 
 interface ScriptItemProps {
@@ -193,11 +194,18 @@ const SqlViewer: React.FC = () => {
         label: 'View Fix'
     },
     {
-        title: '16. Demo Fulfillment Fix (CRITICAL)',
+        title: '16. Demo Fulfillment Fix',
         description: 'Fixes "new row violates RLS" error when fulfilling orders.',
         sql: FIX_FULFILLMENT_RLS_SQL,
         color: 'text-red-500',
         label: 'Insert Fix'
+    },
+    {
+        title: '17. Order Archiving (New)',
+        description: 'Tables for "Soft Delete" functionality.',
+        sql: ORDER_ARCHIVING_SQL,
+        color: 'text-pink-500',
+        label: 'Archiving'
     }
   ];
 
