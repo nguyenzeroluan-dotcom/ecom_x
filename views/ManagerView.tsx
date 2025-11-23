@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { useProductManager } from '../hooks/useProductManager';
 import { ManagerTab, UserProfile, ViewState } from '../types';
@@ -11,8 +10,9 @@ import ManagerHeader from '../components/manager/ManagerHeader';
 
 // Import Tab Components
 import Dashboard from '../components/manager/Dashboard';
+import OrderManager from '../components/manager/OrderManager'; // NEW
 import ProductManager from '../components/ProductManager';
-// FIX: Changed to a named import to resolve the module resolution error.
+import EBookManager from '../components/manager/EBookManager';
 import { CategoryManager } from '../components/manager/CategoryManager';
 import InventoryManager from '../components/manager/InventoryManager';
 import MediaManager from '../components/manager/MediaManager';
@@ -32,7 +32,9 @@ const DEMO_DATA = [
 
 export const TABS: { id: ManagerTab, label: string, icon: string, adminOnly: boolean }[] = [
     { id: 'DASHBOARD', label: 'Dashboard', icon: 'fa-home', adminOnly: false },
+    { id: 'ORDERS', label: 'Orders', icon: 'fa-shopping-bag', adminOnly: false }, // NEW
     { id: 'PRODUCTS', label: 'Products', icon: 'fa-box', adminOnly: false },
+    { id: 'EBOOKS', label: 'E-Books', icon: 'fa-book', adminOnly: false },
     { id: 'CATEGORIES', label: 'Categories', icon: 'fa-tags', adminOnly: false },
     { id: 'INVENTORY', label: 'Inventory', icon: 'fa-warehouse', adminOnly: false },
     { id: 'MEDIA', label: 'Media', icon: 'fa-images', adminOnly: false },
@@ -85,6 +87,7 @@ const ManagerView: React.FC<ManagerViewProps> = ({ setView }) => {
     
     const tabComponents: Record<ManagerTab, React.ReactNode> = {
         DASHBOARD: <Dashboard products={products} setView={setActiveTab} />,
+        ORDERS: <OrderManager />, // NEW
         PRODUCTS: <ProductManager 
             products={products}
             categories={uniqueCategories}
@@ -97,6 +100,7 @@ const ManagerView: React.FC<ManagerViewProps> = ({ setView }) => {
             categoryFilter={productCategoryFilter}
             setCategoryFilter={setProductCategoryFilter}
         />,
+        EBOOKS: <EBookManager />,
         CATEGORIES: <CategoryManager 
             products={products} 
             categories={categories}

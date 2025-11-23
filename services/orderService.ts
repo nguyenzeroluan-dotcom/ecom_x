@@ -1,3 +1,4 @@
+
 import { supabase } from './supabaseClient';
 import { Order, CartItem } from '../types';
 import { logInventoryChange } from './inventoryService';
@@ -114,4 +115,41 @@ export const getOrders = async (userId?: string, email?: string): Promise<Order[
   }
 
   return data as Order[];
+};
+
+export const getAllOrders = async (): Promise<Order[]> => {
+    const { data, error } = await supabase
+        .from('orders')
+        .select(`
+            *,
+            items:order_items(*)
+        `)
+        .order('created_at', { ascending: false });
+
+    if (error) throw new Error(error.message);
+    return data as Order[];
+};
+
+export const updateOrder = async (
+    orderId: number, 
+    updates: { status?: string, tracking_number?: string }
+): Promise<Order> => {
+    const { data, error } = await supabase
+        .from('orders')
+        .update(updates)
+        .eq('id', orderId)
+        .select(`*, items:order_items(*)`)
+        .single();
+
+    if (error) throw new Error(error.message);
+    return data as Order;
+};
+
+export const deleteOrder = async (orderId: number): Promise<void> => {
+    const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+    
+    if (error) throw new Error(error.message);
 };

@@ -13,6 +13,7 @@ import MediaDetailModal from '../manager/media/MediaDetailModal';
 import CollectionManagerModal from '../manager/media/CollectionManagerModal';
 import CollectionEditModal from '../manager/media/CollectionEditModal';
 import CollectionDetailModal from '../manager/media/CollectionDetailModal';
+import OrderDetailModal from '../manager/orders/OrderDetailModal';
 
 const ModalRoot: React.FC = () => {
   const { isOpen, modalType } = useModal();
@@ -42,6 +43,8 @@ const ModalRoot: React.FC = () => {
         return <CollectionEditModal />;
     case ModalType.COLLECTION_DETAIL:
         return <CollectionDetailModal />;
+    case ModalType.ORDER_DETAIL:
+        return <OrderDetailModal />;
     default:
       return null;
   }

@@ -9,6 +9,8 @@ import { MEDIA_COLLECTIONS_SQL } from '../../data/07_media_collections';
 import { EBOOKS_SETUP_SQL } from '../../data/08_ebooks_setup';
 import { GALLERY_VIEW_FIX_SQL } from '../../data/09_gallery_view_fix';
 import { VIDEO_URL_SUPPORT_SQL } from '../../data/10_video_url_support';
+import { EBOOKS_ADVANCED_SQL } from '../../data/11_ebooks_advanced';
+import { ORDER_MANAGEMENT_SQL } from '../../data/12_order_management';
 import { useNotification } from '../../contexts/NotificationContext';
 
 interface ScriptItemProps {
@@ -142,6 +144,20 @@ const SqlViewer: React.FC = () => {
       sql: VIDEO_URL_SUPPORT_SQL,
       color: 'text-indigo-400',
       label: 'Video Support'
+    },
+    {
+        title: '10. Advanced E-Book Manager (NEW)',
+        description: 'Enables PDF upload, storage bucket setup, and simplified permissions.',
+        sql: EBOOKS_ADVANCED_SQL,
+        color: 'text-rose-400',
+        label: 'Adv. E-Books'
+    },
+    {
+        title: '11. Order Management (NEW)',
+        description: 'Adds tracking numbers and admin update permissions.',
+        sql: ORDER_MANAGEMENT_SQL,
+        color: 'text-emerald-400',
+        label: 'Orders'
     }
   ];
 

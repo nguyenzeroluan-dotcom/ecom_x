@@ -5,7 +5,7 @@ export interface Product {
   price: number;
   description: string;
   image_url: string;
-  video_url?: string; // Added video support
+  video_url?: string; 
   category?: string;
   stock?: number;
   sku?: string;
@@ -13,9 +13,20 @@ export interface Product {
   reviews_count?: number;
   collection_id?: number;
   gallery_images?: string[];
-  // New E-Book fields
   is_digital?: boolean; 
   digital_content?: string; 
+  // Linked E-Book Metadata
+  ebook_metadata?: EBookMetadata;
+}
+
+export interface EBookMetadata {
+  product_id: number | string;
+  format: 'pdf' | 'studio';
+  source_url?: string;
+  content_html?: string;
+  allow_download: boolean;
+  drm_enabled: boolean;
+  preview_percentage?: number;
 }
 
 export interface LibraryItem {
@@ -86,7 +97,7 @@ export enum AspectRatio {
 export enum ModalType {
   NONE = 'NONE',
   PRODUCT_DETAIL = 'PRODUCT_DETAIL',
-  PRODUCT_ADMIN_DETAIL = 'PRODUCT_ADMIN_DETAIL', // New Type
+  PRODUCT_ADMIN_DETAIL = 'PRODUCT_ADMIN_DETAIL', 
   CONFIRM = 'CONFIRM',
   SUCCESS = 'SUCCESS',
   COMPARISON = 'COMPARISON',
@@ -95,7 +106,8 @@ export enum ModalType {
   MEDIA_DETAIL = 'MEDIA_DETAIL',
   COLLECTION_MANAGER = 'COLLECTION_MANAGER',
   COLLECTION_EDIT = 'COLLECTION_EDIT',
-  COLLECTION_DETAIL = 'COLLECTION_DETAIL'
+  COLLECTION_DETAIL = 'COLLECTION_DETAIL',
+  ORDER_DETAIL = 'ORDER_DETAIL'
 }
 
 export interface ModalContextType {
@@ -111,11 +123,12 @@ export interface Order {
   customer_name: string;
   customer_email: string;
   total_amount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered';
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
   created_at: string;
   ai_note?: string;
   items?: OrderItem[];
   user_id?: string;
+  tracking_number?: string;
 }
 
 export interface OrderItem {
@@ -165,7 +178,7 @@ export interface PreferencesContextType {
 export type ManagerViewMode = 'table' | 'grid' | 'list';
 export type MarketViewMode = 'grid' | 'list';
 
-export type ManagerTab = 'DASHBOARD' | 'PRODUCTS' | 'CATEGORIES' | 'INVENTORY' | 'MEDIA' | 'FORECAST' | 'USERS' | 'ROLES' | 'DATABASE';
+export type ManagerTab = 'DASHBOARD' | 'ORDERS' | 'PRODUCTS' | 'EBOOKS' | 'CATEGORIES' | 'INVENTORY' | 'MEDIA' | 'FORECAST' | 'USERS' | 'ROLES' | 'DATABASE';
 
 export interface CategoryData {
   id?: number;
