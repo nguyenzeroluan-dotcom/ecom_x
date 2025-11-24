@@ -1,5 +1,4 @@
-
-import { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Product, ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';
 import { useCart } from '../contexts/CartContext';
